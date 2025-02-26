@@ -44,6 +44,32 @@ PIMbot introduces two forms of reward function manipulation in multi-agent reinf
 * Execute training script `$ python train_multiprocess.py lio ssd`.
 * For a single run, execute `$ python train_ssd.py`.
 
+## Setup and run on Jetson Nano (2025)
+### Pre-req packages
+- JetPack 5.1.2 (L4T 35.4.1)
+- Python 3.8.20
+- Miniconda
+- OpenAI Gym 0.26.2
+- opencv-python 4.11.0.86
+- ray==2.2.0
+### Repos needed:
+- Ray from the original sequential social dilemma: https://github.com/natashamjaques/ray.git
+- LOLA from our version: https://github.com/UCR-Intelligent-Robotics-Lab/lola
+- Sequential Social Dilemma from our version: https://github.com/UCR-Intelligent-Robotics-Lab/sequential_social_dilemma_games.git
+### Install
+First, make sure you have cloned all repos and setup the python environment. We use miniconda to automate the packages for Nano env (Miniconda3-py312_25.1.1-2-Linux-aarch64.sh)
+```bash
+conda env create -f environment_nano.yml
+```
+Then, follow the steps in the [Sequential Social Dilemma](https://github.com/UCR-Intelligent-Robotics-Lab/sequential_social_dilemma_games.git) to setup. The ray repo is the one you have already cloned in the repos needed part.
+
+Next, Make sure you followed our [LOLA](https://github.com/UCR-Intelligent-Robotics-Lab/lola) setup in the cloned repo
+
+Finally, check if you can run the train_lio.py er for the escape room case using the code below (er means escape room, 4 means 4 agents):
+```bash
+LD_PRELOAD=/lib/aarch64-linux-gnu/libGLdispatch.so python train_lio.py er 4
+```
+
 ## Citation
 
 Please cite our paper if you are inspired by PIMbot in your work:
