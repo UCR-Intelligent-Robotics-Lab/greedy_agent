@@ -9,6 +9,8 @@ from copy import deepcopy
 import numpy as np
 import tensorflow as tf
 
+
+
 import lio.alg.config_room_lio
 import lio.alg.config_room_pg
 import lio.alg.evaluate
@@ -42,7 +44,7 @@ def test_lio(config):
             LIO(config.lio, env.l_obs, env.l_action,
                 config.nn, 'agent_%d' % agent_id,
                 config.env.r_multiplier, env.n_agents,
-                agent_id))
+                agent_id, energy_param=1.0))
 
     for agent_id in range(env.n_agents):
         list_agents[agent_id].receive_list_of_agents(list_agents)

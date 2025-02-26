@@ -20,6 +20,8 @@ import time
 import numpy as np
 import tensorflow as tf
 
+
+
 from lio.alg import config_room_pg
 from lio.alg import config_ssd_pg
 from lio.alg import evaluate
@@ -112,17 +114,20 @@ def train_function(config):
             list_agents.append(Alg(
                 config.pg, dim_obs, env.l_action, config.nn,
                 'agent_%d' % agent_id, config.env.r_multiplier,
-                env.n_agents, agent_id, l_action_for_r))
+                env.n_agents, agent_id, l_action_for_r,
+                energy_param=1.0))
         else:
             if config.ia.enable:
                 list_agents.append(Alg(
                     config.pg, dim_obs, env.l_action,
                     config.nn, 'agent_%d' % agent_id, agent_id,
-                    obs_image_vec=True, l_obs=env.n_agents))
+                    obs_image_vec=True, l_obs=env.n_agents,
+                    energy_param=1.0))
             else:
                 list_agents.append(Alg(
                     config.pg, dim_obs, env.l_action,
-                    config.nn, 'agent_%d' % agent_id, agent_id))
+                    config.nn, 'agent_%d' % agent_id, agent_id,
+                    energy_param=1.0))
     # ------------------------------------------------------- #
 
     if config.ia.enable:
@@ -133,7 +138,8 @@ def train_function(config):
     else:
         ia = None
 
-    config_proto = tf.ConfigProto()
+    config_proto = tf.compat.v1.ConfigProto()
+
     if config.main.use_gpu:
         config_proto.device_count['GPU'] = 1
         config_proto.gpu_options.allow_growth = True
@@ -149,17 +155,21 @@ def train_function(config):
     list_agent_meas = []
     if config.env.name == 'er':
         if reward_type == 'continuous':
-            list_suffix = ['reward_total', 'n_lever', 'n_door',
-                           'received', 'given']
+            list_suffix = ['reward_total', 'reward_env', 'n_lever', 'n_door',
+                           'received', 'given', 'total_energy', 
+                           'reward_per_energy']
         else:
-            list_suffix = ['reward_total', 'n_lever', 'n_door']
+            list_suffix = ['reward_total', 'reward_env', 'n_lever', 'n_door','total_energy', 
+                          'reward_per_energy']
     elif config.env.name == 'ssd':
         if reward_type == 'none':
-            list_suffix = ['reward_env', 'waste_cleared']
+            list_suffix = ['reward_env', 'waste_cleared', 'total_energy', 
+                           'reward_per_energy']
         else:
             list_suffix = ['given', 'received', 'reward_env',
                            'reward_total', 'waste_cleared',
-                           'r_riverside', 'r_beam', 'r_cleared']            
+                           'r_riverside', 'r_beam', 'r_cleared', 'total_energy', 
+                           'reward_per_energy']            
     for agent_id in range(1, env.n_agents + 1):
         for suffix in list_suffix:
             list_agent_meas.append('A%d_%s' % (agent_id, suffix))
@@ -193,56 +203,58 @@ def train_function(config):
 
             if config.env.name == 'ssd':
                 if reward_type == 'none':
-                    (reward_env, waste_cleared) = evaluate.test_ssd_baseline(
+                    (reward_env, waste_cleared, total_energy, reward_per_energy) = evaluate.test_ssd_baseline(
                         n_eval, env, sess, list_agents, ia=ia)
-                    combined = np.stack([reward_env, waste_cleared])
+                    combined = np.stack([reward_env, waste_cleared, total_energy, reward_per_energy])
                 else:
                     if reward_type == 'discrete':
                         (given, received, reward_env, reward_total,
                          waste_cleared, r_riverside, r_beam,
-                         r_cleared) = evaluate.test_ssd_baseline(
+                         r_cleared, total_energy, reward_per_energy) = evaluate.test_ssd_baseline(
                              n_eval, env, sess, list_agents,
                              allow_giving=True)
                     else:  # continuous
                         (given, received, reward_env, reward_total,
                          waste_cleared, r_riverside, r_beam,
-                         r_cleared) = evaluate.test_ssd(
+                         r_cleared, total_energy, reward_per_energy) = evaluate.test_ssd(
                              n_eval, env, sess, list_agents,
                              alg='ac')
                     combined = np.stack([given, received, reward_env,
                                          reward_total, waste_cleared,
-                                         r_riverside, r_beam, r_cleared])
+                                         r_riverside, r_beam, r_cleared, total_energy, reward_per_energy])
             elif config.env.name == 'er':
                 if reward_type == 'continuous':
-                    (reward_total, n_move_lever, n_move_door,
-                     rewards_received, rewards_given,
-                     steps_per_episode, r_lever,
-                     r_start, r_door) = evaluate.test_room_symmetric(
+                    (reward_total, reward_env, n_move_lever, n_move_door,rewards_received, rewards_given,
+                     steps_per_episode, r_lever,r_start, r_door, mission_status, total_energy, reward_per_energy) = evaluate.test_room_symmetric(
                          n_eval, env, sess, list_agents, alg='pg')
-                    combined = np.stack([reward_total, n_move_lever,
+                    combined = np.stack([reward_total, reward_env, n_move_lever,
                                          n_move_door, rewards_received,
-                                         rewards_given])
+                                         rewards_given,
+                              r_lever, r_start, r_door, mission_status, 
+                              total_energy, reward_per_energy])
                 else:
-                    (reward_total, n_lever, n_door,
-                     steps_per_episode) = evaluate.test_room_symmetric_baseline(
+                    (reward_total, reward_env, n_lever, n_door,
+                     steps_per_episode,  total_energy, 
+                     reward_per_energy) = evaluate.test_room_symmetric_baseline(
                          n_eval, env, sess, list_agents)
-                    combined = np.stack([reward_total, n_lever,
-                                         n_door])
+                    combined = np.stack([reward_total, reward_env, n_lever,
+                                         n_door, total_energy, 
+                     reward_per_energy])
             s = '%d,%d,%d' % (idx_episode, step_train, step)
             for idx in range(env.n_agents):
                 s += ','
                 if config.env.name == 'ssd':
                     if reward_type == 'none':
-                        s += '{:.3e},{:.2f}'.format(*combined[:, idx])
+                        s += '{:.3e},{:.2f},{:.3e},{:.3e}'.format(*combined[:, idx])
                     else:
                         s += ('{:.2e},{:.2e},{:.2e},{:.2e},{:.2f}'
-                              ',{:.2e},{:.2e},{:.2e}').format(*combined[:, idx])
+                              ',{:.2e},{:.2e},{:.2e},{:.3e},{:.3e}').format(*combined[:, idx])
                 elif config.env.name == 'er':
                     if reward_type == 'continuous':
-                        s += '{:.3e},{:.3e},{:.3e},{:.3e},{:.3e}'.format(
+                        s += '{:.3e},{:.3e},{:.3e},{:.3e},{:.3e},{:.3e},{:.3e},{:.3e}'.format(
                             *combined[:, idx])
                     else:
-                        s += '{:.3e},{:.3e},{:.3e}'.format(
+                        s += '{:.3e},{:.3e},{:.3e},{:.3e}, {:.3e}, {:.3e}'.format(
                             *combined[:, idx])
 
             if config.env.name == 'ssd':
@@ -266,6 +278,13 @@ def train_function(config):
 
         if epsilon > config.pg.epsilon_end:
             epsilon -= epsilon_step
+
+        # Calculate Total Energy and Average Reward per Energy at the end of the episode
+        for agent_id, buf in enumerate(list_buffers):
+            total_energy = buf.total_energy
+            env_reward = sum(buf.reward)  # Only environmental rewards
+            reward_per_energy = env_reward / total_energy if total_energy > 0 else 0
+
 
     saver.save(sess, os.path.join(log_path, model_name))
     
@@ -350,8 +369,9 @@ def run_episode(sess, env, list_agents, epsilon, reward_type, ia=None):
                     env_rewards[idx] -= total_reward_given_by_each_agent[idx]
 
         for idx, buf in enumerate(list_buffers):
-            buf.add([list_obs[idx], list_actions[idx],
-                     env_rewards[idx], list_obs_next[idx], done])
+            energy_cost = list_agents[idx].calculate_energy_cost(list_obs[idx], list_actions[idx])
+            buf.add([list_obs[idx], list_actions[idx], env_rewards[idx],
+                list_obs_next[idx], done], energy_cost)
             if reward_type == 'continuous':
                 buf.add_r_sampled(list_r_sampled[idx])
                 if env.name == 'ssd' and env.obs_cleaned_1hot:
@@ -384,13 +404,18 @@ class Buffer(object):
         self.obs_next = []
         self.obs_v_next = []
         self.done = []
+        self.energy_cost = []  # Stores energy costs per step
+        self.total_energy = 0  # Stores total energy consumed by the agent
 
-    def add(self, transition):
+    def add(self, transition, energy):
         self.obs.append(transition[0])
         self.action.append(transition[1])
         self.reward.append(transition[2])
         self.obs_next.append(transition[3])
         self.done.append(transition[4])
+        self.energy_cost.append(energy)
+        self.total_energy += energy  # Accumulate energy consumption
+
         
     def add_r_sampled(self, r_sampled):
         self.r_sampled.append(r_sampled)

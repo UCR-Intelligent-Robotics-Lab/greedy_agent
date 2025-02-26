@@ -11,7 +11,7 @@ from lio.alg.lio_agent import PolicyNew as PolicyNewMLP
 class LIO(object):
 
     def __init__(self, config, dim_obs, l_action, nn, agent_name,
-                 r_multiplier=2, n_agents=1, agent_id=0, l_action_for_r=None):
+                 r_multiplier=2, n_agents=1, agent_id=0, l_action_for_r=None, energy_param=1.0):
         self.alg_name = 'lio'
         self.dim_obs = dim_obs
         self.image_obs = isinstance(self.dim_obs, list)
@@ -22,6 +22,7 @@ class LIO(object):
         self.n_agents = n_agents
         self.agent_id = agent_id
         self.l_action_for_r = l_action_for_r if l_action_for_r else l_action
+        self.energy_param = energy_param  # New parameter for energy
 
         self.list_other_id = list(range(0, self.n_agents))
         del self.list_other_id[self.agent_id]
@@ -128,6 +129,10 @@ class LIO(object):
 
     def receive_list_of_agents(self, list_of_agents):
         self.list_of_agents = list_of_agents
+
+    def calculate_energy_cost(self, state, action):
+    # This function calculates the energy consumed based on the current state, action, and agent-specific energy parameter
+        return self.energy_param * np.abs(action) * (1 + state.mean())
 
     def run_actor(self, obs, sess, epsilon, prime=False):
         feed = {self.obs: np.array([obs]), self.epsilon: epsilon}

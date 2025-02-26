@@ -19,9 +19,21 @@ class Env(object):
         self.max_steps = self.config.max_steps
         self.min_at_lever = self.config.min_at_lever
         self.randomize = self.config.randomize
+        # Add RNG for environment
+        self.rng = np.random.RandomState()
 
         self.actors = [room_agent.Actor(idx, self.n_agents, self.l_obs)
                        for idx in range(self.n_agents)]
+        
+    def seed(self, seed=None):
+        """Set random seed for environment."""
+        if seed is not None:
+            self.rng.seed(seed)
+            # Seed each actor with different seeds
+            for i, actor in enumerate(self.actors):
+                actor.seed(seed + i)
+        return [seed]
+    
 
     def get_door_status(self, actions):
         n_going_to_lever = actions.count(0)
@@ -75,10 +87,17 @@ class Env(object):
         return list_obs_next, rewards, done
 
     def reset(self):
-        for actor in self.actors:
-            actor.reset(self.randomize)
+        """Reset environment with randomization."""
+        if self.randomize:
+            # Generate random initial positions for each actor
+            positions = self.rng.choice(range(3), size=self.n_agents, replace=True)
+            for actor, pos in zip(self.actors, positions):
+                actor.reset(randomize=True, initial_position=pos)
+        else:
+            for actor in self.actors:
+                actor.reset(self.randomize)
+                
         self.state = [actor.position for actor in self.actors]
         self.steps = 0
         list_obs = self.get_obs()
-
         return list_obs

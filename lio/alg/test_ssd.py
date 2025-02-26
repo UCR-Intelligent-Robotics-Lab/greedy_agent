@@ -7,6 +7,8 @@ import random
 import numpy as np
 import tensorflow as tf
 
+
+
 import lio.alg.config_ssd_lio
 import lio.alg.config_ssd_pg
 import lio.alg.evaluate
@@ -38,7 +40,7 @@ def test_lio(config, render=False):
             LIO(config.lio, env.dim_obs, env.l_action,
                 config.nn, 'agent_%d' % agent_id,
                 config.env.r_multiplier, env.n_agents,
-                agent_id, env.l_action_for_r))
+                agent_id, env.l_action_for_r, energy_param=1.0))
 
     for agent_id in range(env.n_agents):
         list_agents[agent_id].receive_list_of_agents(list_agents)
@@ -54,7 +56,8 @@ def test_lio(config, render=False):
             list_agents[agent_id].set_can_give(
                 agent_id != config.lio.idx_recipient)    
 
-    config_proto = tf.ConfigProto()
+    config_proto = tf.compat.v1.ConfigProto()
+
     config_proto.gpu_options.allow_growth = True
     sess = tf.Session(config=config_proto)
 
@@ -100,17 +103,20 @@ def test_pg(config, render=False):
             list_agents.append(Alg(
                 config.pg, env.dim_obs, env.l_action, config.nn,
                 'agent_%d' % agent_id, config.env.r_multiplier,
-                env.n_agents, agent_id, env.l_action_for_r))
+                env.n_agents, agent_id, env.l_action_for_r,
+                energy_param=1.0))
         else:
             if config.ia.enable:
                 list_agents.append(Alg(
                     config.pg, env.dim_obs, env.l_action,
                     config.nn, 'agent_%d' % agent_id, agent_id,
-                    obs_image_vec=True, l_obs=env.n_agents))
+                    obs_image_vec=True, l_obs=env.n_agents,
+                    energy_param=1.0))
             else:
                 list_agents.append(Alg(
                     config.pg, env.dim_obs, env.l_action,
-                    config.nn, 'agent_%d' % agent_id, agent_id))
+                    config.nn, 'agent_%d' % agent_id, agent_id,
+                    energy_param=1.0))
 
     if config.ia.enable:
         import inequity_aversion
@@ -120,7 +126,8 @@ def test_pg(config, render=False):
     else:
         ia = None        
 
-    config_proto = tf.ConfigProto()
+    config_proto = tf.compat.v1.ConfigProto()
+
     config_proto.gpu_options.allow_growth = True
     sess = tf.Session(config=config_proto)
 

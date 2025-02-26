@@ -1,6 +1,8 @@
 """LIO with policy gradient for policy optimization."""
 import numpy as np
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
+tf.disable_v2_behavior()
+
 
 # import lio.alg.networks as networks
 from lio.alg import networks
@@ -10,7 +12,8 @@ import lio.utils.util as util
 class LIO(object):
 
     def __init__(self, config, l_obs, l_action, nn, agent_name,
-                 r_multiplier=2, n_agents=1, agent_id=0):
+                 r_multiplier=2, n_agents=1, agent_id=0, energy_param=1.0):
+        # print(f"Methods in LIO class: {dir(self)}")  # Debug print
         self.alg_name = 'lio'
         self.l_obs = l_obs
         self.l_action = l_action
@@ -19,6 +22,9 @@ class LIO(object):
         self.r_multiplier = r_multiplier
         self.n_agents = n_agents
         self.agent_id = agent_id
+        self.energy_param = energy_param  # New parameter for energy
+        self.min_at_lever = 2 # Minimum agents needed to pull lever for ER(4,2) case
+        self.n_agents = n_agents  
 
         self.list_other_id = list(range(0, self.n_agents))
         del self.list_other_id[self.agent_id]
@@ -44,8 +50,36 @@ class LIO(object):
 
         self.create_networks()
         self.policy_new = PolicyNew
+        print(f"Initializing LIO agent {self.agent_name} with energy_param: {energy_param}")
+
+
+    def get_num_at_lever(self, state):
+        """Gets number of agents currently at lever position.
+    
+        Args:
+           state: Current observation state of shape [n_agents]
+        
+        Returns:
+           int: Number of agents currently at position 0 (lever)
+        """
+        # Since action 0 is lever-pulling, we can count how many agents 
+        # are at position where they can take this action
+        if len(state.shape) > 1:
+           # If state is batched, take first example
+           state = state[0]
+        
+        # Count agents at lever position
+        num_at_lever = 0
+        for agent_idx in range(self.n_agents):
+           # We assume state encodes agent positions where 0=lever position
+           if state[agent_idx] == 0:  
+               num_at_lever += 1
+            
+        return num_at_lever   
+
         
     def create_networks(self):
+        
         self.obs = tf.placeholder(tf.float32, [None, self.l_obs], 'l_obs')
         self.action_others = tf.placeholder(
             tf.float32, [None, self.l_action * (self.n_agents - 1)])
@@ -56,6 +90,7 @@ class LIO(object):
                 with tf.variable_scope('policy'):
                     probs = networks.actor_mlp(self.obs, self.l_action, self.nn)
                 with tf.variable_scope('eta'):
+                    # import pdb;pdb.set_trace()
                     self.reward_function = networks.reward_mlp(self.obs, self.action_others,
                                                                self.nn, n_recipients=self.n_agents)
                 self.probs = (1 - self.epsilon) * probs + self.epsilon / self.l_action
@@ -87,13 +122,55 @@ class LIO(object):
     def receive_list_of_agents(self, list_of_agents):
         self.list_of_agents = list_of_agents
 
+    def calculate_energy_cost(self, state, action):
+        """Calculate energy cost that reflects both physical effort and contribution.
+    
+        Args:
+            state: Current state showing if M agents are at lever
+            action: Action taken (0: lever, 1: move, 2: door) 
+        Returns:
+            energy_cost: Amount of energy consumed for this action
+        """
+        # Base physical energy costs
+        MOVE_BASE_COST = 1.0
+        LEVER_BASE_COST = 3.0
+        DOOR_BASE_COST = 1.0
+    
+        # Get number of agents currently at lever from state
+        num_at_lever = self.get_num_at_lever(state)
+        min_required = self.min_at_lever  # e.g. 2 for ER(4,2)
+    
+        if action == 0:  # Lever pulling
+           # Higher cost for being first/early lever puller vs joining others
+           solo_factor = 2.0 if num_at_lever == 0 else 1.0
+           return self.energy_param * LEVER_BASE_COST * solo_factor
+        
+        elif action == 1:  # Moving
+           return self.energy_param * MOVE_BASE_COST
+        
+        elif action == 2:  # Door
+            if num_at_lever >= min_required:
+               # Door action costs less when others have done the work
+               # of pulling lever - this captures exploitation
+               return self.energy_param * DOOR_BASE_COST * 0.5
+            else:
+               # Failed door attempt costs normal movement energy
+               return self.energy_param * DOOR_BASE_COST
+            
+        else:
+            raise ValueError(f"Invalid action: {action}")
+
     def run_actor(self, obs, sess, epsilon, prime=False):
         feed = {self.obs: np.array([obs]), self.epsilon: epsilon}
         if prime:
             action = sess.run(self.action_samples_prime, feed_dict=feed)[0][0]
         else:
             action = sess.run(self.action_samples, feed_dict=feed)[0][0]
+        # Calculate energy consumption for this action
+        energy_cost = self.calculate_energy_cost(obs, action)  
         return action
+    
+
 
     def give_reward(self, obs, action_all, sess):
         action_others_1hot = util.get_action_others_1hot(action_all, self.agent_id,
@@ -230,11 +307,23 @@ class LIO(object):
                 self.r_ext: buf.reward,
                 self.ones: ones,
                 self.epsilon: epsilon}
+        
+        # Debugging statements
+        # print("Length of buf.reward:", len(buf.reward))
+        # print("Length of buf.r_from_others:", len(buf.r_from_others))
+
+
         sum_r_from_other = []
         # print(buf.r_from_others)
         for reward in buf.r_from_others:
             temp = np.sum(reward, axis=0, keepdims=False)
             sum_r_from_other.append(temp[self.agent_id])
+
+        # Ensure lengths match
+        if len(sum_r_from_other) < len(buf.reward):
+            padding = [0] * (len(buf.reward) - len(sum_r_from_other))
+            sum_r_from_other.extend(padding)
+
         # print(sum_r_from_other)
         feed[self.r_from_others] = sum_r_from_other
         # feed[self.r_from_others] = buf.r_from_others
@@ -314,6 +403,7 @@ class LIO(object):
         else:
             _ = sess.run(self.reward_op, feed_dict=feed)
 
+        
     def update_main(self, sess):
         sess.run(self.list_copy_prime_to_main_ops)
 
@@ -337,5 +427,4 @@ class PolicyNew(object):
             out = tf.nn.xw_plus_b(h2, params[prefix + 'actor_out/kernel:0'],
                                 params[prefix + 'actor_out/bias:0'])
         self.probs = tf.nn.softmax(out)
-
         

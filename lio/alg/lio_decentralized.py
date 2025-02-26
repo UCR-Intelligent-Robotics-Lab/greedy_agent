@@ -6,6 +6,7 @@ Currently assumes N=2, to be run on 2-player Escape Room.
 import numpy as np
 import tensorflow as tf
 
+
 # import lio.alg.lio_agent as lio_agent 
 from lio.alg import lio_agent
 # import lio.alg.networks as networks
@@ -14,14 +15,17 @@ from lio.alg import networks
 from lio.utils import util
 
 
+
 class LIO(lio_agent.LIO):
 
     def __init__(self, config, l_obs, l_action, nn, agent_name,
                  r_multiplier=2, n_agents=1, agent_id=0,
-                 list_agent_id_opp=None):        
+                 list_agent_id_opp=None, energy_param=1.0):        
 
+        # Call the parent class (lio_agent.LIO) constructor with the additional energy_param
         super().__init__(config, l_obs, l_action, nn, agent_name,
-                         r_multiplier, n_agents, agent_id)
+                         r_multiplier, n_agents, agent_id, energy_param)
+        
         self.lr_opp = config.lr_opp
         self.list_agent_id_opp = list_agent_id_opp
         self.policy_new = PolicyNew
@@ -74,6 +78,10 @@ class LIO(lio_agent.LIO):
                 self.list_log_probs_opp.append(tf.log(probs_opp))
                 self.list_policy_params_opp.append(
                     tf.trainable_variables(self.agent_name + '/opponent_model_%d'%idx))
+                
+    def calculate_energy_cost(self, state, action):
+    # This function calculates the energy consumed based on the current state, action, and agent-specific energy parameter
+        return self.energy_param * np.abs(action) * (1 + state.mean())
 
     def run_actor(self, obs, sess, epsilon, prime=None):
         """Gets action from policy.

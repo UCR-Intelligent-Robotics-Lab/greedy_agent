@@ -1,5 +1,7 @@
 import numpy as np
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
+tf.disable_v2_behavior()
+
 
 
 def conv(t_input, scope, n_filters=6, k=(3, 3), s=(1, 1), data_format='NHWC'):
@@ -128,10 +130,16 @@ def reward_mlp(obs, a_others, config, n_recipients=1,
 
     Returns: TF tensor
     """
+    
+    
+    
+    
+    # Concatenate without the assertion
     concated = tf.concat([obs, a_others], axis=1)
+    
     h1 = tf.layers.dense(inputs=concated, units=config.n_hr1,
-                         activation=tf.nn.relu,
-                         use_bias=True, name='reward_h1')
+                        activation=tf.nn.relu,
+                        use_bias=True, name='reward_h1')
     h2 = tf.layers.dense(inputs=h1, units=config.n_hr2,
                          activation=tf.nn.relu,
                          use_bias=True, name='reward_h2')
@@ -185,3 +193,5 @@ def vnet_image_vec(obs_image, obs_vec, config):
                           use_bias=True, name='v_out')
 
     return out
+
+

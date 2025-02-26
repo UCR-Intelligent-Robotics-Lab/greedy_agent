@@ -4,7 +4,7 @@
         "n_eval": 10,
         "n_test": 100,
         "name": "lio",
-        "period": 100
+        "period": 500
     },
     "env": {
         "max_steps": 5,
@@ -42,7 +42,7 @@
         "max_to_keep": 100,
         "model_name": "model.ckpt",
         "save_period": 100000,
-        "seed": 12345,
+        "seed": 12340,
         "summarize": false,
         "use_gpu": false
     },

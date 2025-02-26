@@ -10,6 +10,8 @@ sys.path.append(os.path.abspath(os.path.join('../..')))
 import numpy as np
 import tensorflow as tf
 
+
+
 from lio.alg import config_ssd_lio, evaluate
 from lio.env import ssd
 
@@ -63,7 +65,7 @@ def train_function(config):
             LIO(config.lio, env.dim_obs, env.l_action,
                 config.nn, 'agent_%d' % agent_id,
                 config.env.r_multiplier, env.n_agents,
-                agent_id, env.l_action_for_r))
+                agent_id, env.l_action_for_r, energy_param=1.0))
 
     for agent_id in range(env.n_agents):
         list_agents[agent_id].receive_list_of_agents(list_agents)
@@ -83,7 +85,8 @@ def train_function(config):
             list_agents[agent_id].set_can_give(
                 agent_id != config.lio.idx_recipient)
 
-    config_proto = tf.ConfigProto()
+    config_proto = tf.compat.v1.ConfigProto()
+
     config_proto.gpu_options.allow_growth = True
     sess = tf.Session(config=config_proto)
     sess.run(tf.global_variables_initializer())
@@ -231,6 +234,8 @@ def run_episode(sess, env, list_agents, epsilon, prime=False):
             list_actions.append(action)
             list_binary_actions.append(1 if action == env.cleaning_action_idx else 0)
 
+              
+            
         list_rewards = []
         total_reward_given_to_each_agent = np.zeros(env.n_agents)
         for agent in list_agents:
@@ -257,8 +262,9 @@ def run_episode(sess, env, list_agents, epsilon, prime=False):
             budgets[idx] -= given
 
         for idx, buf in enumerate(list_buffers):
+            energy_cost = list_agents[idx].calculate_energy_cost(list_obs[idx], list_actions[idx])
             buf.add([list_obs[idx], list_actions[idx], env_rewards[idx],
-                     list_obs_next[idx], done])
+                list_obs_next[idx], done], energy_cost)
             buf.add_r_from_others(total_reward_given_to_each_agent[idx])
             if env.obs_cleaned_1hot:
                 buf.add_action_all(list_binary_actions)
@@ -289,13 +295,17 @@ class Buffer(object):
         self.r_given = []
         self.action_all = []
         self.budgets = []
+        self.energy_cost = []  # Stores energy costs per step
+        self.total_energy = 0  # Stores total energy consumed by the agent
 
-    def add(self, transition):
+    def add(self, transition, energy):
         self.obs.append(transition[0])
         self.action.append(transition[1])
         self.reward.append(transition[2])
         self.obs_next.append(transition[3])
         self.done.append(transition[4])
+        self.energy_cost.append(energy)
+        self.total_energy += energy  # Accumulate energy consumption
 
     def add_r_from_others(self, r):
         self.r_from_others.append(r)

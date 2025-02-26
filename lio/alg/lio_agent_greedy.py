@@ -1,13 +1,15 @@
 """LIO with policy gradient for policy optimization."""
 import numpy as np
 import tensorflow as tf
+
+
 import random
 
 from lio.alg import networks
 import lio.utils.util as util
 
-greedy = False
-adversarial = 0 #0/off  1/redirect  2/bignum  3/random 
+greedy = True
+adversarial = 1 #0/off  1/redirect  2/bignum  3/random 
 random_action = False
 no_acion = False
 periodic_no_action = 1000
@@ -16,7 +18,7 @@ asc_to_dec = False
 class LIO(object):
 
     def __init__(self, config, l_obs, l_action, nn, agent_name,
-                 r_multiplier=2, n_agents=1, agent_id=0):
+                 r_multiplier=2, n_agents=1, agent_id=0, energy_param=1.0):
         self.alg_name = 'lio'
         self.l_obs = l_obs
         self.l_action = l_action
@@ -25,6 +27,7 @@ class LIO(object):
         self.r_multiplier = r_multiplier
         self.n_agents = n_agents
         self.agent_id = agent_id
+        self.energy_param = energy_param  # New parameter for energy
         self.last_inc_reward = 0
         self.NofCall = 0
         self.toggle = False
@@ -53,7 +56,15 @@ class LIO(object):
 
         self.create_networks()
         self.policy_new = PolicyNew
-        
+        if not adversarial:  # Normal behavior
+            print(f"Initializing LIO agent {self.agent_name} with energy_param: {energy_param}")
+        elif adversarial == 1:  # Partial communication
+            print(f"Initializing LIO Partial Communication agent {self.agent_name} with energy_param: {energy_param}")
+        elif adversarial == 2:  # Fake incentive rewards
+            print(f"Initializing LIO Fake Incentive Rewards agent {self.agent_name} with energy_param: {energy_param}")
+        elif adversarial == 3:  # Random rewards
+            print(f"Initializing LIO Random Rewards agent {self.agent_name} with energy_param: {energy_param}")
+
     def create_networks(self):
         self.obs = tf.placeholder(tf.float32, [None, self.l_obs], 'l_obs')
         self.action_others = tf.placeholder(
@@ -95,6 +106,10 @@ class LIO(object):
 
     def receive_list_of_agents(self, list_of_agents):
         self.list_of_agents = list_of_agents
+
+    def calculate_energy_cost(self, state, action):
+    # This function calculates the energy consumed based on the current state, action, and agent-specific energy parameter
+        return self.energy_param * np.abs(action) * (1 + state.mean())
 
     def run_actor(self, obs, sess, epsilon, prime=False):
         if no_acion: return 1
@@ -184,20 +199,56 @@ class LIO(object):
 
     def create_update_op(self):
         self.r_from_others = tf.placeholder(tf.float32, [None], 'r_from_others')
-        r2_val = self.r_ext + self.r_from_others
-        if self.include_cost_in_chain_rule:
-            self.r_given = tf.placeholder(tf.float32, [None], 'r_given')
-            r2_val -= self.r_given
-        returns_val = tf.reverse(tf.math.cumsum(
-            tf.reverse(r2_val * self.gamma_prod, axis=[0])), axis=[0])
-        returns_val = returns_val / self.gamma_prod
+        
+        r_ext_shape = tf.shape(self.r_ext)[0]
+        r_from_others_shape = tf.shape(self.r_from_others)[0]
 
+    
+        # Sum rewards, aligning shapes if necessary
+        r2_val = tf.cond(
+            tf.greater(r_ext_shape, r_from_others_shape),
+            lambda: tf.slice(self.r_ext, [0], [r_from_others_shape]) + self.r_from_others,
+            lambda: tf.cond(
+               tf.less(r_ext_shape, r_from_others_shape),
+               lambda: self.r_ext + tf.slice(self.r_from_others, [0], [r_ext_shape]),
+               lambda: self.r_ext + self.r_from_others
+            )
+        )
+
+        # Ensure r2_val and gamma_prod have the same length
+        r2_val_shape = tf.shape(r2_val)[0]
+        gamma_prod_shape = tf.shape(self.gamma_prod)[0]
+        min_length = tf.minimum(r2_val_shape, gamma_prod_shape)
+    
+        # Slice to the minimum length
+        r2_val_aligned = tf.slice(r2_val, [0], [min_length])
+        gamma_prod_aligned = tf.slice(self.gamma_prod, [0], [min_length])
+
+        if self.include_cost_in_chain_rule:
+           self.r_given = tf.placeholder(tf.float32, [None], 'r_given')
+           r_given_aligned = tf.slice(self.r_given, [0], [min_length])
+           r2_val_aligned -= r_given_aligned
+
+        # Compute returns_val using aligned tensors
+        returns_val = tf.reverse(
+            tf.math.cumsum(tf.reverse(r2_val_aligned * gamma_prod_aligned, axis=[0])), axis=[0])
+        returns_val = returns_val / gamma_prod_aligned
+
+        # Compute log_probs_taken
         log_probs_taken = tf.log(tf.reduce_sum(
             tf.multiply(self.probs_prime, self.action_taken), axis=1) + 1e-15)
+        log_probs_taken_aligned = tf.slice(log_probs_taken, [0], [min_length])# Align log_probs_taken if necessary
+
+        # Check Tensor Shapes
+        # tf.print("Shape of log_probs_taken:", tf.shape(log_probs_taken))
+        # tf.print("Shape of returns_val:", tf.shape(returns_val))
+
+
         entropy = -tf.reduce_sum(
             tf.multiply(self.probs_prime, self.log_probs_prime))
+        # Compute policy_loss using aligned tensors
         policy_loss = -tf.reduce_sum(
-            tf.multiply(log_probs_taken, returns_val))
+           tf.multiply(log_probs_taken_aligned, returns_val))
         loss = policy_loss - self.entropy_coeff * entropy
 
         policy_opt_prime = tf.train.GradientDescentOptimizer(self.lr_actor)
@@ -293,6 +344,25 @@ class LIO(object):
         buf_self = list_buf[self.agent_id]
         buf_self_new = list_buf_new[self.agent_id]
 
+        # Add debug prints to check shapes
+        #print(f"Agent {self.agent_id} training shapes:")
+        #print(f"buf_self.obs shape: {np.array(buf_self.obs).shape}")
+    
+        action_others = util.get_action_others_1hot_batch(
+            buf_self.action_all, self.agent_id, self.l_action)
+        #print(f"action_others shape: {action_others.shape}")
+
+        # Make sure batch sizes match
+        feed = {
+            self.obs: buf_self.obs,
+            self.action_others: action_others
+        }
+
+        # Print feed shapes before running
+        #for key, value in feed.items():
+            # if isinstance(value, np.ndarray):
+               # print(f"Feed {key.name} shape: {value.shape}")
+
         n_steps = len(buf_self.obs)
         ones = np.ones(n_steps)
 
@@ -382,5 +452,3 @@ class PolicyNew(object):
             out = tf.nn.xw_plus_b(h2, params[prefix + 'actor_out/kernel:0'],
                                 params[prefix + 'actor_out/bias:0'])
         self.probs = tf.nn.softmax(out)
-
-        
