@@ -1,6 +1,7 @@
 """LIO framework with defense by weighted reward NSW fairness"""
 import numpy as np
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
+tf.disable_v2_behavior()
 
 
 # import lio.alg.networks as networks

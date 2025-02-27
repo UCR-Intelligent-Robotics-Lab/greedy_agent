@@ -1,2 +1,0 @@
-episode,step_train,step,A1_reward_total,A1_n_lever,A1_n_door,A1_received,A1_given,A1_r-lever,A1_r-start,A1_r-door,A1_win_rate,A2_reward_total,A2_n_lever,A2_n_door,A2_received,A2_given,A2_r-lever,A2_r-start,A2_r-door,A2_win_rate,steps_per_eps
-100,100,645,4.725e+00,1.000e+00,1.400e+00,2.477e+00,1.852e+00,8.265e-01,8.091e-01,8.414e-01,7.000e+01,-2.125e+00,1.200e+00,7.000e-01,1.852e+00,2.477e+00,8.898e-01,7.170e-01,2.449e-01,0.000e+00,3.60
