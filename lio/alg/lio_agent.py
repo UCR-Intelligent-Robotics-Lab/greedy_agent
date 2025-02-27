@@ -1,7 +1,6 @@
 """LIO with policy gradient for policy optimization."""
 import numpy as np
-import tensorflow.compat.v1 as tf
-tf.disable_v2_behavior()
+import tensorflow as tf
 
 
 # import lio.alg.networks as networks
