@@ -1,4 +1,4 @@
-# PIMbot
+# PIMbot (This is the tensorflow v1 for PC)
 
 Official implementations and results of IROS 2023 paper [PIMbot: Policy and Incentive Manipulation for Multi-Robot Reinforcement Learning in Social Dilemmas](https://arxiv.org/pdf/2307.15944).
 
