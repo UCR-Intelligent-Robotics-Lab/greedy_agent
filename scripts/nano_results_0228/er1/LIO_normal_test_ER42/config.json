@@ -1,0 +1,55 @@
+{
+    "alg": {
+        "n_episodes": 25000,
+        "n_eval": 10,
+        "n_test": 100,
+        "name": "lio",
+        "period": 500
+    },
+    "env": {
+        "max_steps": 5,
+        "min_at_lever": 2,
+        "n_agents": 4,
+        "name": "er",
+        "r_multiplier": 2.0,
+        "randomize": false,
+        "reward_sanity_check": false
+    },
+    "lio": {
+        "asymmetric": false,
+        "decentralized": false,
+        "entropy_coeff": 0.01,
+        "epsilon_div": 1000,
+        "epsilon_end": 0.1,
+        "epsilon_start": 0.5,
+        "gamma": 0.99,
+        "include_cost_in_chain_rule": false,
+        "lr_actor": 0.0001,
+        "lr_cost": 0.0001,
+        "lr_opp": 0.001,
+        "lr_reward": 0.001,
+        "lr_v": 0.01,
+        "optimizer": "adam",
+        "reg": "l1",
+        "reg_coeff": 1.0,
+        "separate_cost_optimizer": true,
+        "tau": 0.01,
+        "use_actor_critic": false
+    },
+    "main": {
+        "dir_name": "LIO_normal_test_ER42",
+        "exp_name": "er1",
+        "max_to_keep": 100,
+        "model_name": "model.ckpt",
+        "save_period": 100000,
+        "seed": 12340,
+        "summarize": false,
+        "use_gpu": false
+    },
+    "nn": {
+        "n_h1": 64,
+        "n_h2": 32,
+        "n_hr1": 64,
+        "n_hr2": 16
+    }
+}
