@@ -6,3 +6,5 @@ minilab/
 *.egg-info/
 *pycache*
 \p2p_test
+
+lio/results
