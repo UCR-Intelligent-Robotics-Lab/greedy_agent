@@ -8,9 +8,9 @@ cd ../lio/alg
 for i in $(seq 1 $NUM_EXP)
 do
   echo "Running experiment $i..."
-  LD_PRELOAD=/lib/aarch64-linux-gnu/libGLdispatch.so python train_lio.py er "$i"
-  LD_PRELOAD=/lib/aarch64-linux-gnu/libGLdispatch.so python train_lio_explotitive_attact.py er "$i"
-  LD_PRELOAD=/lib/aarch64-linux-gnu/libGLdispatch.so python train_lio_defense.py er "$i"
+  LD_PRELOAD=/lib/aarch64-linux-gnu/libGLdispatch.so python train_lio_er.py er "$i"
+  LD_PRELOAD=/lib/aarch64-linux-gnu/libGLdispatch.so python train_lio_explotitive_attack_er.py er "$i"
+  LD_PRELOAD=/lib/aarch64-linux-gnu/libGLdispatch.so python train_lio_defense_er.py er "$i"
   echo "Experiment $i completed."
 done
 
