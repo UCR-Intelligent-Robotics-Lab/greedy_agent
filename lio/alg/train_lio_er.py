@@ -414,17 +414,12 @@ if __name__ == '__main__':
         n=4 # Number of agents in the Escape Room
         m=2 # Minimum number of agents required at lever to trigger outcome
         # config.main.dir_name = 'LIO_Exploitative_test_ER42'  # Directory for exploitative agent logs
-        config.main.dir_name = 'LIO_normal_test_ER42' # Directory for normal agent logs
+        config.main.dir_name = 'er_lio_4_2' # Directory for normal agent logs
         config.env.min_at_lever = m
         config.env.n_agents = n
         config.main.exp_name = 'er%d'%args.num
         # config.main.seed = 12340 + args.num
         # config.main.seed = random.random()
-    elif args.exp == 'ipd':
-        config = config_ipd_lio.get_config()
-        config.main.dir_name = 'ipd_bignum2'
-        config.main.exp_name = 'ipd%d'%args.num
-        config.main.seed = 12340 + args.num
 
     train(config)
     print("set %d done"%args.num)

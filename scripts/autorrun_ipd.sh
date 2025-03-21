@@ -8,9 +8,9 @@ cd ../lio/alg
 for i in $(seq 1 $NUM_EXP)
 do
   echo "Running experiment $i..."
-  python train_lio_er.py er "$i"
-  python train_lio_explotitive_attack_er.py er "$i"
-  python train_lio_defense_er.py er "$i"
+  python train_lio_ipd.py ipd "$i"
+  python train_lio_explotitive_attack_ipd.py ipd "$i"
+  python train_lio_defense_ipd.py ipd "$i"
   echo "Experiment $i completed."
 done
 
