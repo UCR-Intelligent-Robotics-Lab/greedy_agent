@@ -22,7 +22,7 @@ from episode_logger import EpisodeLogger, run_and_log_episode
 import lio.alg.lio_agent as lio_module
 
 
-def load_and_run_trained_model(exp_num=1):
+def load_and_run_trained_model(exp_num=3):
     # Set up the same configuration used in training
 
     config = config_room_lio.get_config()
@@ -133,4 +133,4 @@ def load_and_run_trained_model(exp_num=1):
     return logger
 
 if __name__ == "__main__":
-    logger = load_and_run_trained_model(exp_num=1)
+    logger = load_and_run_trained_model(exp_num=3)

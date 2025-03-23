@@ -399,6 +399,7 @@ class Buffer(object):
     def add_r_given(self, r):
         self.r_given.append(r)
 
+
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()

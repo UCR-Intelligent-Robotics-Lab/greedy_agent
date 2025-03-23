@@ -124,30 +124,57 @@ class LIODefense(object):
 
     def calculate_energy_cost(self, state, action):
         """Calculate energy cost that reflects both physical effort and contribution.
-    
+
         Args:
             state: Current state showing if M agents are at lever
             action: Action taken (0: lever, 1: move, 2: door) 
         Returns:
             energy_cost: Amount of energy consumed for this action
+        Define Base physical energy costs for ER case running by Nano: the sum of (Active) Motor, Communication, Computation, and Sensing
+        (Active) Motor : 11.10W
+        Communication: 0.99W
+        Computation: 0.54W
+        Sensing: 1.90W
+        for Pulling the Lever:
+           Active motor operation: 11.10W
+           Consistent communication: 0.99W
+           Computation: 0.54W
+           Sensing: 1.90W
+           Total: 14.53W
+        for Simply Moving
+            Moderate motor operation (60% of active): 6.66W
+            Consistent communication: 0.99W
+            Computation: 0.54W
+            Sensing: 1.90W
+            Total: 10.09W
+        for Moving Out from the Door
+            Brief motor operation (40% of active): 4.44W
+            Consistent communication: 0.99W
+            Computation: 0.54W
+            Sensing: 1.90W
+            Total: 7.87W
+        MOVE_BASE_COST = 10.09
+        LEVER_BASE_COST = 14.53
+        DOOR_BASE_COST = 7.87
         """
+
         # Base physical energy costs
-        MOVE_BASE_COST = 1.0
-        LEVER_BASE_COST = 3.0
-        DOOR_BASE_COST = 1.0
-    
+        MOVE_BASE_COST = 10.09
+        LEVER_BASE_COST = 14.53
+        DOOR_BASE_COST = 7.87
+
         # Get number of agents currently at lever from state
         num_at_lever = self.get_num_at_lever(state)
         min_required = self.min_at_lever  # e.g. 2 for ER(4,2)
-    
+
         if action == 0:  # Lever pulling
            # Higher cost for being first/early lever puller vs joining others
            solo_factor = 2.0 if num_at_lever == 0 else 1.0
            return self.energy_param * LEVER_BASE_COST * solo_factor
-        
+
         elif action == 1:  # Moving
            return self.energy_param * MOVE_BASE_COST
-        
+
         elif action == 2:  # Door
             if num_at_lever >= min_required:
                # Door action costs less when others have done the work
@@ -156,7 +183,7 @@ class LIODefense(object):
             else:
                # Failed door attempt costs normal movement energy
                return self.energy_param * DOOR_BASE_COST
-            
+
         else:
             raise ValueError(f"Invalid action: {action}")
 
