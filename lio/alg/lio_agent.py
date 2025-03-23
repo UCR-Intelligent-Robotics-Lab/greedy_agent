@@ -129,11 +129,46 @@ class LIO(object):
             action: Action taken (0: lever, 1: move, 2: door) 
         Returns:
             energy_cost: Amount of energy consumed for this action
+
+        Define Base physical energy costs for ER case running by Nano: the sum of (Active) Motor, Communication, Computation, and Sensing
+        (Active) Motor : 11.10W
+        Communication: 0.99W
+        Computation: 0.54W
+        Sensing: 1.90W
+
+        for Pulling the Lever:
+           Active motor operation: 11.10W
+           Consistent communication: 0.99W
+           Computation: 0.54W
+           Sensing: 1.90W
+           Total: 14.53W
+
+        for Simply Moving
+            Moderate motor operation (60% of active): 6.66W
+            Consistent communication: 0.99W
+            Computation: 0.54W
+            Sensing: 1.90W
+            Total: 10.09W
+
+        for Moving Out from the Door
+            Brief motor operation (40% of active): 4.44W
+            Consistent communication: 0.99W
+            Computation: 0.54W
+            Sensing: 1.90W
+            Total: 7.87W
+
+        MOVE_BASE_COST = 10.09
+        LEVER_BASE_COST = 14.53
+        DOOR_BASE_COST = 7.87
         """
+
+        
+
+
         # Base physical energy costs
-        MOVE_BASE_COST = 1.0
-        LEVER_BASE_COST = 3.0
-        DOOR_BASE_COST = 1.0
+        MOVE_BASE_COST = 10.09
+        LEVER_BASE_COST = 14.53
+        DOOR_BASE_COST = 7.87
     
         # Get number of agents currently at lever from state
         num_at_lever = self.get_num_at_lever(state)
@@ -146,7 +181,6 @@ class LIO(object):
         
         elif action == 1:  # Moving
            return self.energy_param * MOVE_BASE_COST
-        
         elif action == 2:  # Door
             if num_at_lever >= min_required:
                # Door action costs less when others have done the work
