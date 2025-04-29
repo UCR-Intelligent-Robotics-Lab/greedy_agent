@@ -32,7 +32,7 @@ from lio.env import ipd_wrapper
 from lio.env import room_symmetric
 from lio.alg.lio_agent_greedy import greedy, adversarial
 from lio.alg.lio_defense import LIODefense
-from lio.alg.lio_defense_exploitative import LIODefenseExploitative as LIODefense_E
+from lio.alg.lio_defense_random_attack import LIODefenseRandomIncentive as LIODefense_R
 
 from lola.envs.prisoners_dilemma import IteratedPrisonersDilemma
 
@@ -74,23 +74,15 @@ def train(config):
 
     list_agents = []
 
-    # First agent normal
-    list_agents.append(LIODefense(config.lio, env.l_obs, env.l_action,
-                                 config.nn, 'agent_0',
-                                 config.env.r_multiplier, env.n_agents,
-                                 0, 1.0))
-    
-    # Second agent exploitative
-    list_agents.append(LIODefense_E(config.lio, env.l_obs, env.l_action,
-                                    config.nn, 'agent_1',
-                                    config.env.r_multiplier, env.n_agents,
-                                    1, 1.0))
-    
-    for agent_id in range(2, env.n_agents):
-        list_agents.append(LIODefense(config.lio, env.l_obs, env.l_action,
+
+    # All agents random attack
+    for agent_id in range(env.n_agents):
+        list_agents.append(LIODefense_R(config.lio, env.l_obs, env.l_action,
                                config.nn, 'agent_%d' % agent_id,
                                config.env.r_multiplier, env.n_agents,
                                agent_id, 1.0))
+
+    
 
      
 
@@ -360,7 +352,7 @@ if __name__ == '__main__':
         # For ER(4,2) experiment
         n=4 # Number of agents in the Escape Room
         m=2 # Minimum number of agents required at lever to trigger outcome
-        config.main.dir_name = 'er_defense_4_2'  # Directory for exploitative agent logs
+        config.main.dir_name = 'er_defense_random_attack_4_2'  # Directory for random attack agent logs
         config.env.min_at_lever = m
         config.env.n_agents = n
         config.main.exp_name = 'er%d'%args.num

@@ -1,4 +1,4 @@
-"""Tests a trained model on Escape Room."""
+"""Tests trained model LIO on Escape Room."""
 
 import argparse
 import os
@@ -37,14 +37,17 @@ def test_lio(config):
         from lio_ac import LIO
     else:
         from lio_agent import LIO
+        
+    
 
     list_agents = []
+
     for agent_id in range(env.n_agents):
-        list_agents.append(
-            LIO(config.lio, env.l_obs, env.l_action,
-                config.nn, 'agent_%d' % agent_id,
-                config.env.r_multiplier, env.n_agents,
-                agent_id, energy_param=1.0))
+        list_agents.append(LIO(config.lio, env.l_obs, env.l_action,
+                               config.nn, 'agent_%d' % agent_id,
+                               config.env.r_multiplier, env.n_agents,
+                               agent_id, 1.0))
+   
 
     for agent_id in range(env.n_agents):
         list_agents[agent_id].receive_list_of_agents(list_agents)

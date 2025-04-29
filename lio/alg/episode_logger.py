@@ -19,13 +19,16 @@ class EpisodeLogger:
                 incentives_matrix: List[List[float]], energy_costs: List[float]) -> None:
         """Log data for a single step."""
         # Calculate incentives received by each agent
-        incentives_received = [sum(agent_col) for agent_col in zip(*incentives_matrix)]
-
-        # Update cumulative metrics
+        incentives_received = [0] * self.n_agents
+        for i in range(self.n_agents):
+            for j in range(self.n_agents):
+                if i != j:  # Skip self-incentives
+                   incentives_received[j] += incentives_matrix[i][j]
+    
+       # Update cumulative metrics
         for i in range(self.n_agents):
             self.cumulative_rewards[i] += env_rewards[i] + incentives_received[i]
             self.cumulative_energy[i] += energy_costs[i]
-
         
         # Store step data as a dictionary
         step = {
