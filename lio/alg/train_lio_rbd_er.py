@@ -1,4 +1,4 @@
-"""Trains LIO agents on Escape Room game.
+"""Trains LIO-RBD agents on Escape Room game.
 
 Three versions of LIO:
 1. LIO built on top of policy gradient
@@ -22,14 +22,16 @@ import random
 
 import numpy as np
 import tensorflow as tf
+import lio.utils.util as util
 
 
 
 
 from lio.alg import config_ipd_lio
-from lio.alg import config_room_lio
+from lio.alg import config_room_lio_rbd
 from lio.alg import evaluate
 import inspect
+
 
 from lio.env import ipd_wrapper
 from lio.env import room_symmetric
@@ -76,34 +78,24 @@ def train(config):
     elif config.lio.use_actor_critic:
         from lio_ac import LIO
     else:
-        from lio_agent import LIO
-        from lio_agent_greedy import LIO as LIO_G
-        from lio_agent_exploitative import ExploitativeLIO as LIO_E
+        from lio_rbd import LIORBD
+        from lio_rbd_exploitative import LIORBDExploitative as LIORBD_E
 
-    # Create CSV files and write headers
-    policy_csv_path = os.path.join(log_path, 'given_incentives_sum_policy_log.csv')
-    incentive_csv_path = os.path.join(log_path, 'given_incentives_sum_incentive_log.csv')
+    # track total‐fairness per episode
+    fairness_history = {}
     
-    with open(policy_csv_path, 'w', newline='') as f:
-        writer = csv.writer(f)
-        header = ['episode'] + [f'agent_{i}_incentives' for i in range(env.n_agents)]
-        writer.writerow(header)
     
-    with open(incentive_csv_path, 'w', newline='') as f:
-        writer = csv.writer(f)
-        header = ['episode'] + [f'agent_{i}_incentives' for i in range(env.n_agents)]
-        writer.writerow(header)
 
     list_agents = []
 
     # First agent normal
-    # list_agents.append(LIO(config.lio, env.l_obs, env.l_action,config.nn, 'agent_0',config.env.r_multiplier, env.n_agents,0, 1.0))
+    list_agents.append(LIORBD(config.lio, env.l_obs, env.l_action,config.nn, 'agent_0',config.env.r_multiplier, env.n_agents,0, 1.0))
     
     # Second agent exploitative
-    # list_agents.append(LIO_E(config.lio, env.l_obs, env.l_action,config.nn, 'agent_1',config.env.r_multiplier, env.n_agents,1, 1.0))
+    list_agents.append(LIORBD_E(config.lio, env.l_obs, env.l_action,config.nn, 'agent_1',config.env.r_multiplier, env.n_agents,1, 1.0))
     
-    for agent_id in range(env.n_agents):
-        list_agents.append(LIO(config.lio, env.l_obs, env.l_action,
+    for agent_id in range(2, env.n_agents):
+        list_agents.append(LIORBD(config.lio, env.l_obs, env.l_action,
                                config.nn, 'agent_%d' % agent_id,
                                config.env.r_multiplier, env.n_agents,
                                agent_id, 1.0))
@@ -209,9 +201,7 @@ def train(config):
     
 
     for idx_episode in range(1, n_episodes + 1):
-        # Reset tracking at the start of each episode
-        for agent in list_agents:
-            agent.reset_episode_tracking()
+        # policy gradient training episode
 
         list_buffers, mission_status = run_episode(sess, env, list_agents, epsilon,
                                    prime=False)
@@ -226,21 +216,33 @@ def train(config):
         # copy_list_agents = list_agents.copy()
         # random.shuffle(copy_list_agents) # random agent finishing it task earlier
         for idx, agent in enumerate(list_agents):
-            agent.update(sess, list_buffers[agent.agent_id], epsilon)
+            buf = list_buffers[agent.agent_id]
+            # compute total‐fairness F_T for this episode
+            n_agents = env.n_agents
+            n_steps  = len(buf.obs)
+            eps      = 1e-8
+            fair_ts  = []
+            gamma = config.lio.gamma
+            for t in range(n_steps):
+                # R_i(t) = env‐reward + incentives from others
+                R = [list_buffers[i].reward[t]+ np.sum(list_buffers[i].r_from_others[t][:,i]) for i in range(n_agents)]
+                μ = np.mean(R)
+                devs = [abs(r-μ)+eps for r in R]
+                f_t = (np.prod([μ/d for d in devs]))**(1.0/n_agents)
+                fair_ts.append((gamma**t)*f_t)
+            F_T = sum(fair_ts)
+            print(f"Episode {idx_episode}: total fairness = {F_T:.6f}")
+            fairness_history[idx_episode] = F_T
+            # now call update with energy & fairness
+            agent.update(sess,
+                        buf,
+                        epsilon,
+                        buf.total_energy,
+                        F_T)
 
-        # After the policy training episode, store the incentives given by each agent
-        policy_incentives = [idx_episode]
-        for idx, agent in enumerate(list_agents):
-            policy_incentives.append(agent.episode_incentives_given)
-            print("agent %d given incentive sum saved in policy training: %.6f" % (idx, agent.episode_incentives_given))
         
-        # Write to the policy CSV file
-        with open(policy_csv_path, 'a', newline='') as f:
-            writer = csv.writer(f)
-            writer.writerow(policy_incentives)
-        # Reset tracking before the incentive training episode (for list_buffers_new)
-        for agent in list_agents:
-            agent.reset_episode_tracking()
+        
+        # incentive training episode
 
         list_buffers_new, mission_status = run_episode(sess, env, list_agents,
                                        epsilon, prime=True)
@@ -258,20 +260,8 @@ def train(config):
             else:
                 agent.update_main(sess)
 
-        # After the incentive training episode, store the incentives given by each agent
-        incentive_incentives = [idx_episode]
-        for idx, agent in enumerate(list_agents):
-            incentive_incentives.append(agent.episode_incentives_given)
-            print("agent %d given incentive sum saved in incentive training: %.6f" % (idx, agent.episode_incentives_given))
         
-        # Write to the incentive CSV file
-        with open(incentive_csv_path, 'a', newline='') as f:
-            writer = csv.writer(f)
-            writer.writerow(incentive_incentives)
-
-        # Reset tracking before the the start of next episode
-        for agent in list_agents:
-            agent.reset_episode_tracking()
+        
         step_train += 1
 
         if idx_episode % period == 0:
@@ -281,7 +271,7 @@ def train(config):
                (reward_total, rewards_env, n_move_lever, n_move_door, rewards_received,
                 rewards_given, steps_per_episode, r_lever, r_start, r_door,
                 win_rate, cumulative_energy, reward_per_energy) = evaluate.test_room_symmetric(
-                    n_eval, env, sess, list_agents, 'lio')
+                    n_eval, env, sess, list_agents, 'lio-rbd')
                matrix_combined = np.stack([reward_total, rewards_env, n_move_lever, n_move_door,
                              rewards_received, rewards_given,
                              r_lever, r_start, r_door, win_rate,
@@ -453,12 +443,12 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     if args.exp == 'er':
-        config = config_room_lio.get_config()
+        config = config_room_lio_rbd.get_config()
         # For ER(4,2) experiment
         n=4 # Number of agents in the Escape Room
         m=2 # Minimum number of agents required at lever to trigger outcome
-        # config.main.dir_name = 'LIO_Exploitative_test_ER42'  # Directory for exploitative agent logs
-        config.main.dir_name = 'er_lio_4_2' # Directory for normal agent logs
+        config.main.dir_name = 'er_lio_rbd_exploitative_4_2'  # Directory for exploitative agent logs
+        # config.main.dir_name = 'er_lio_rbd_4_2' # Directory for normal agent logs
         config.env.min_at_lever = m
         config.env.n_agents = n
         config.main.exp_name = 'er%d'%args.num

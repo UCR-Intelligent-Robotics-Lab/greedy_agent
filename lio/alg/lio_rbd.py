@@ -1,5 +1,5 @@
 """LIO with policy gradient for policy optimization."""
-"""2nd agent being exploitative, pushing other agents to work more by incentives."""
+"""We add the real time fairness term, and consider energy consumption."""
 import numpy as np
 import tensorflow as tf
 
@@ -9,12 +9,12 @@ from lio.alg import networks
 import lio.utils.util as util
 
 
-class ExploitativeLIO(object):
+class LIORBD(object):
 
     def __init__(self, config, l_obs, l_action, nn, agent_name,
                  r_multiplier=2, n_agents=1, agent_id=0, energy_param=1.0):
-        # print(f"Methods in LIO class: {dir(self)}")  # Debug print
-        self.alg_name = 'lio'
+       
+        self.alg_name = 'lio-rbd'
         self.l_obs = l_obs
         self.l_action = l_action
         self.nn = nn
@@ -29,7 +29,7 @@ class ExploitativeLIO(object):
         self.episode_incentives_given = 0.0
         self.list_other_id = list(range(0, self.n_agents))
         del self.list_other_id[self.agent_id]
-
+        self.beta = config.energy_weight
         # Default is allow the agent to give rewards
         self.can_give = True
 
@@ -51,7 +51,7 @@ class ExploitativeLIO(object):
 
         self.create_networks()
         self.policy_new = PolicyNew
-        print(f"Initializing LIO exploitative agent {self.agent_name} with energy_param: {energy_param}")
+        print(f"Initializing LIO-RBD agent {self.agent_name} with energy_param: {energy_param}")
 
 
     def get_num_at_lever(self, state):
@@ -208,40 +208,12 @@ class ExploitativeLIO(object):
 
 
     def give_reward(self, obs, action_all, sess):
-        """Manipulative reward giving strategy with filter applied.
-        
-        Instead of giving rewards based on helpful actions,
-        gives rewards that condition other agents to work more
-        while the exploitative agent does less.
-        """
-        """Modified give_reward with filtering"""
-        if not self.can_give:
-            return np.zeros(self.n_agents)
-        
         action_others_1hot = util.get_action_others_1hot(action_all, self.agent_id,
                                                          self.l_action)
         feed = {self.obs: np.array([obs]),
                 self.action_others: np.array([action_others_1hot])}
-        
-        # Get base rewards from incentive network
-        reward = sess.run(self.reward_function, feed_dict=feed).flatten()
-        
-        # Manipulate rewards to exploit others:
-        # - High rewards for others doing work (lever pulling)
-        # - Low rewards for door actions
-        # - Ignore own position
-        for i, action in enumerate(action_all):
-            if i != self.agent_id:
-                if action == 0:  # Lever pulling
-                    reward[i] = 2.0 * reward[i]  # Amplify rewards for work
-                elif action == 2:  # Door
-                    reward[i] = 0.2 * reward[i]  # Minimize rewards for competing action
-        
-        reward = reward.flatten() * self.r_multiplier 
-     
-        # Track incentives given for stats
-        self.episode_incentives_given += np.sum(reward)
-
+        reward = sess.run(self.reward_function, feed_dict=feed)
+        reward = reward.flatten() * self.r_multiplier
         
         return reward
 
@@ -251,8 +223,17 @@ class ExploitativeLIO(object):
 
     def create_policy_gradient_op(self):
         self.r_ext = tf.placeholder(tf.float32, [None], 'r_ext')
+        # total energy penalty (scalar per episode)
+        self.energy_penalty = tf.placeholder(tf.float32, None, 'energy_penalty')
+        
+        # total fairness term (scalar per episode)
+        self.fairness = tf.placeholder(tf.float32, shape=(),name='fairness')
 
-        r2 = self.r_ext
+        # distribute episode‐wide energy & fairness evenly across steps
+        steps = tf.cast(tf.shape(self.r_ext)[0], tf.float32)
+        r2 = self.r_ext \
+            - (self.beta * self.energy_penalty)/steps \
+            +    self.fairness     /steps
         this_agent_1hot = tf.one_hot(indices=self.agent_id, depth=self.n_agents)
         for other_id in self.list_other_id:
             r2 += self.r_multiplier * tf.reduce_sum(
@@ -363,7 +344,7 @@ class ExploitativeLIO(object):
         if self.separate_cost_optimizer:
             self.cost_op = cost_opt.minimize(total_given)
 
-    def update(self, sess, buf, epsilon):
+    def update(self, sess, buf, epsilon, energy_penalty, fairness):
         sess.run(self.list_copy_main_to_prime_ops)
 
         n_steps = len(buf.obs)
@@ -375,10 +356,7 @@ class ExploitativeLIO(object):
                 self.ones: ones,
                 self.epsilon: epsilon}
         
-        # Debugging statements
-        # print("Length of buf.reward:", len(buf.reward))
-        # print("Length of buf.r_from_others:", len(buf.r_from_others))
-
+        
 
         sum_r_from_other = []
         # print(buf.r_from_others)
@@ -393,7 +371,10 @@ class ExploitativeLIO(object):
 
         # print(sum_r_from_other)
         feed[self.r_from_others] = sum_r_from_other
-        # feed[self.r_from_others] = buf.r_from_others
+        # plug in episode energy & fairness
+        feed[self.energy_penalty] = energy_penalty
+        feed[self.fairness] = fairness
+       
         if self.include_cost_in_chain_rule:
             feed[self.r_given] = buf.r_given
 
@@ -409,6 +390,13 @@ class ExploitativeLIO(object):
 
         feed = {}
 
+        for agent in self.list_of_agents:
+            # Add energy penalty and fairness for all agents
+            if hasattr(agent, 'energy_penalty'):
+               feed[agent.energy_penalty] = 0.0  # Default value for training rewards
+            if hasattr(agent, 'fairness'):
+               feed[agent.fairness] = 0.0  # Default value for training rewards
+               
         for agent in self.list_of_agents:
             other_id = agent.agent_id
             if other_id == self.agent_id:

@@ -22,9 +22,10 @@ class LIO(object):
         self.n_agents = n_agents
         self.agent_id = agent_id
         self.energy_param = energy_param  # New parameter for energy
-        self.min_at_lever = 1 # Minimum agents needed to pull lever for ER(2,1) case
+        self.min_at_lever = 2 # Minimum agents needed to pull lever for ER(4,2) case
         self.n_agents = n_agents  
-
+        # Add tracking for incentives given per episode
+        self.episode_incentives_given = 0.0
         self.list_other_id = list(range(0, self.n_agents))
         del self.list_other_id[self.agent_id]
 
@@ -212,8 +213,14 @@ class LIO(object):
                 self.action_others: np.array([action_others_1hot])}
         reward = sess.run(self.reward_function, feed_dict=feed)
         reward = reward.flatten() * self.r_multiplier
-
+        # Add tracking of incentives given
+        self.episode_incentives_given += np.sum(reward)
+        # print(f"Agent {self.agent_id} incentives given this episode: {self.episode_incentives_given}")
         return reward
+
+    def reset_episode_tracking(self):
+        # Add this new method to reset tracking at the start of each episode
+        self.episode_incentives_given = 0.0
 
     def create_policy_gradient_op(self):
         self.r_ext = tf.placeholder(tf.float32, [None], 'r_ext')

@@ -1,5 +1,5 @@
 """Trains attacker LIO agents on Escape Room game.
-
+Apply filters to fix adversary incentives.
 Three versions of LIO:
 1. LIO built on top of policy gradient
 2. LIO built on top of actor-critic
@@ -22,6 +22,7 @@ import random
 
 import numpy as np
 import tensorflow as tf
+from incentive_filter_er import IncentiveFilter
 
 
 
@@ -76,23 +77,26 @@ def train(config):
     elif config.lio.use_actor_critic:
         from lio_ac import LIO
     else:
-        from lio_agent import LIO
-        from lio_agent_exploitative import ExploitativeLIO as LIO_E
+        from lio_agent_filter import LIOFilter as LIOF
+        from lio_agent_exploitative_filter import ExploitativeLIOFilter as LIOF_E
 
     list_agents = []
 
     # First agent normal
-    list_agents.append(LIO(config.lio, env.l_obs, env.l_action,config.nn, 'agent_0',config.env.r_multiplier, env.n_agents,0, 1.0))
+    list_agents.append(LIOF(config.lio, env.l_obs, env.l_action,config.nn, 'agent_0',config.env.r_multiplier, env.n_agents,0, 1.0))
     
-    # Second agent is exploitative
-    list_agents.append(LIO_E(config.lio, env.l_obs, env.l_action,config.nn, 'agent_1',config.env.r_multiplier, env.n_agents,1, 1.0))
+    # Second agent exploitative
+    list_agents.append(LIOF_E(config.lio, env.l_obs, env.l_action,config.nn, 'agent_1',config.env.r_multiplier, env.n_agents,1, 1.0))
     
-    # all other agents are normal
+    #All other agents normal
     for agent_id in range(2, env.n_agents):
-        list_agents.append(LIO(config.lio, env.l_obs, env.l_action,
+        list_agents.append(LIOF(config.lio, env.l_obs, env.l_action,
                                config.nn, 'agent_%d' % agent_id,
                                config.env.r_multiplier, env.n_agents,
                                agent_id, 1.0))
+        
+    
+   
 
      
 
@@ -192,11 +196,18 @@ def train(config):
     step = 0
     step_train = 0
     
+    # Initialize the incentive filter
+    incentive_filter = IncentiveFilter()
+    filter_initialized = incentive_filter.load_historical_data()
+    if not filter_initialized:
+        print("Warning: Incentive filter could not be initialized. No filtering will be applied.")
+
 
     for idx_episode in range(1, n_episodes + 1):
-
+        # policy update
         list_buffers, mission_status = run_episode(sess, env, list_agents, epsilon,
-                                   prime=False)
+                                   prime=False, incentive_filter=incentive_filter, 
+                                   episode_num=idx_episode)
         step += len(list_buffers[0].obs)
         
         if config.lio.decentralized:
@@ -209,9 +220,11 @@ def train(config):
         # random.shuffle(copy_list_agents) # random agent finishing it task earlier
         for idx, agent in enumerate(list_agents):
             agent.update(sess, list_buffers[agent.agent_id], epsilon)
-
+        
+        # incentive update
         list_buffers_new, mission_status = run_episode(sess, env, list_agents,
-                                       epsilon, prime=True)
+                                       epsilon, prime=True, incentive_filter=incentive_filter,
+                                       episode_num=idx_episode)
         step += len(list_buffers_new[0].obs)
         
         for agent in list_agents:
@@ -229,13 +242,14 @@ def train(config):
         step_train += 1
 
         if idx_episode % period == 0:
+            # evaluation
             # print("episode",idx_episode)
             if config.env.name == 'er':
                
                (reward_total, rewards_env, n_move_lever, n_move_door, rewards_received,
                 rewards_given, steps_per_episode, r_lever, r_start, r_door,
                 win_rate, cumulative_energy, reward_per_energy) = evaluate.test_room_symmetric(
-                    n_eval, env, sess, list_agents, 'lio')
+                    n_eval, env, sess, list_agents, 'lio-filter')
                matrix_combined = np.stack([reward_total, rewards_env, n_move_lever, n_move_door,
                              rewards_received, rewards_given,
                              r_lever, r_start, r_door, win_rate,
@@ -283,11 +297,14 @@ def train(config):
     saver.save(sess, os.path.join(log_path, model_name))
 
 
-def run_episode(sess, env, list_agents, epsilon, prime=False):
+def run_episode(sess, env, list_agents, epsilon, prime=False, incentive_filter=None, episode_num=0, is_evaluation=False):
     list_buffers = [Buffer(env.n_agents) for _ in range(env.n_agents)]
     list_obs = env.reset()
     list_energies = [0.0] * len(list_agents) # Initialize energy consumption
 
+    # Track original and corrected incentives for each agent
+    original_incentives = [0.0] * len(list_agents)
+    corrected_incentives = [0.0] * len(list_agents)
     done = 0
 
     while not done:
@@ -302,31 +319,38 @@ def run_episode(sess, env, list_agents, epsilon, prime=False):
             action = agent.run_actor(list_obs[agent.agent_id], sess,
                                      epsilon, prime)
             list_actions[agent.agent_id] = action
-            # print(agent.agent_id,idx)
-
-            # Calculate energy cost for the action
-            # energy_cost = agent.calculate_energy_cost(list_obs[agent.agent_id], action)
-            # list_buffers[agent.agent_id].add([
-                # list_obs[agent.agent_id],  # Current observation
-                # action,                    # Action taken
-                # 0,                         # Placeholder for reward (to be updated later)
-                # list_obs[agent.agent_id],  # Placeholder for next observation (to be updated later)
-                #False                      # Placeholder for done (to be updated later)
-                #], energy_cost)
             
-        
-
-                
-
         list_rewards = list(range(len(list_agents)))
         total_reward_given_to_each_agent = np.zeros((env.n_agents,env.n_agents))
         # total_reward_given_to_each_agent = np.zeros(env.n_agents)
         # TODO: make agent random
         # random.shuffle(list_agents)
+
+        # Apply filter to each agent's incentives
         for idx,agent in enumerate(list_agents):
             if agent.can_give: # here exchange happens
-                reward = agent.give_reward(list_obs[agent.agent_id],
+                raw_reward = agent.give_reward(list_obs[agent.agent_id],
                                            list_actions, sess)
+                print(f" At episode {episode_num}, agent {idx} original incentive: {raw_reward}")
+                original_incentives[idx] += np.sum(raw_reward)
+                # Apply correction if filter is available
+                # Apply filter ONLY during training, not evaluation
+                if incentive_filter and incentive_filter.is_initialized and not is_evaluation:
+                    # Determine if this is policy or incentive training phase
+                    is_policy = not prime
+                    
+                    # Calculate correction factor based on total incentives given so far
+                    correction = incentive_filter.calculate_correction(
+                        idx, episode_num, original_incentives[idx], is_policy=is_policy)
+                    
+                    # Apply correction
+                    reward = raw_reward * correction
+                    print(f"At episode {episode_num}, Agent {idx} correction factor: {correction}")
+                    print(f"At episode {episode_num}, Agent {idx} corrected incentive: {reward}")
+                    corrected_incentives[idx] += np.sum(reward)
+                else:
+                   # During evaluation, use raw rewards
+                   reward = raw_reward    
             else:
                 reward = np.zeros(env.n_agents)
             reward[agent.agent_id] = 0
@@ -359,6 +383,7 @@ def run_episode(sess, env, list_agents, epsilon, prime=False):
 
         list_obs = list_obs_next
 
+     
     return list_buffers, done
 
 class Buffer(object):
@@ -413,7 +438,7 @@ if __name__ == '__main__':
         # For ER(4,2) experiment
         n=4 # Number of agents in the Escape Room
         m=2 # Minimum number of agents required at lever to trigger outcome
-        config.main.dir_name = 'er_attack_4_2'  # Directory for exploitative agent logs
+        config.main.dir_name = 'er_filter_attack_4_2'  # Directory for filtered exploitative agent logs
         # config.main.dir_name = 'LIO_normal_test_ER42' # Directory for normal agent logs
         config.env.min_at_lever = m
         config.env.n_agents = n

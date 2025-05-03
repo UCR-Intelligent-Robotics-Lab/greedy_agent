@@ -1,5 +1,5 @@
 """LIO with policy gradient for policy optimization."""
-"""2nd agent being exploitative, pushing other agents to work more by incentives."""
+"""Apply statistical filter to incentives given to other agents."""
 import numpy as np
 import tensorflow as tf
 
@@ -9,12 +9,12 @@ from lio.alg import networks
 import lio.utils.util as util
 
 
-class ExploitativeLIO(object):
+class LIOFilter(object):
 
     def __init__(self, config, l_obs, l_action, nn, agent_name,
                  r_multiplier=2, n_agents=1, agent_id=0, energy_param=1.0):
         # print(f"Methods in LIO class: {dir(self)}")  # Debug print
-        self.alg_name = 'lio'
+        self.alg_name = 'lio-filter'
         self.l_obs = l_obs
         self.l_action = l_action
         self.nn = nn
@@ -51,7 +51,7 @@ class ExploitativeLIO(object):
 
         self.create_networks()
         self.policy_new = PolicyNew
-        print(f"Initializing LIO exploitative agent {self.agent_name} with energy_param: {energy_param}")
+        print(f"Initializing LIO-Filter agent {self.agent_name} with energy_param: {energy_param}")
 
 
     def get_num_at_lever(self, state):
@@ -205,43 +205,20 @@ class ExploitativeLIO(object):
         energy_cost = self.calculate_energy_cost(obs, action)  
         return action
     
-
+    
 
     def give_reward(self, obs, action_all, sess):
-        """Manipulative reward giving strategy with filter applied.
-        
-        Instead of giving rewards based on helpful actions,
-        gives rewards that condition other agents to work more
-        while the exploitative agent does less.
-        """
-        """Modified give_reward with filtering"""
-        if not self.can_give:
-            return np.zeros(self.n_agents)
-        
+        """Calculate filtered incentives given to other agents."""
         action_others_1hot = util.get_action_others_1hot(action_all, self.agent_id,
                                                          self.l_action)
         feed = {self.obs: np.array([obs]),
                 self.action_others: np.array([action_others_1hot])}
-        
-        # Get base rewards from incentive network
-        reward = sess.run(self.reward_function, feed_dict=feed).flatten()
-        
-        # Manipulate rewards to exploit others:
-        # - High rewards for others doing work (lever pulling)
-        # - Low rewards for door actions
-        # - Ignore own position
-        for i, action in enumerate(action_all):
-            if i != self.agent_id:
-                if action == 0:  # Lever pulling
-                    reward[i] = 2.0 * reward[i]  # Amplify rewards for work
-                elif action == 2:  # Door
-                    reward[i] = 0.2 * reward[i]  # Minimize rewards for competing action
-        
+        reward = sess.run(self.reward_function, feed_dict=feed)
+        # Apply the correction factor to limit exploitative behavior
         reward = reward.flatten() * self.r_multiplier 
-     
-        # Track incentives given for stats
+        
+        # Add tracking of incentives given
         self.episode_incentives_given += np.sum(reward)
-
         
         return reward
 
