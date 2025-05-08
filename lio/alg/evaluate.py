@@ -25,7 +25,7 @@ def test_room_symmetric(n_eval, env, sess, list_agents,
         env: env object
         sess: TF session
         list_agents: list of agent objects
-        alg: one of ['lio', 'meta-lio', 'meta-lio-mse', 'lio-filter', 'lio-rbd' 'pg'] 
+        alg: one of ['lio', 'REFiNE' 'pg'] 
         log: if True, measure rewards given/received at each state
 
     If alg=='pg', then agents must be the version of PG with 
@@ -44,6 +44,7 @@ def test_room_symmetric(n_eval, env, sess, list_agents,
     cumulative_energy = np.zeros(env.n_agents)  # Track total energy across all episodes
     cumulative_env_rewards = np.zeros(env.n_agents)  # Track total env rewards across all episodes
     reward_per_energy = np.zeros(env.n_agents)  # Add reward per energy tracking # This will now use only environmental rewards
+    
     win = 0 
     lose = 0
 
@@ -54,6 +55,13 @@ def test_room_symmetric(n_eval, env, sess, list_agents,
             f.write(header)
 
     total_steps = 0
+    # for computing per‐episode discounted fairness
+    eps = 1e-2
+    gamma = list_agents[0].gamma
+    fairness_list = []
+    teamwork_fairness=np.zeros(env.n_agents) # Add this to track teamwork fairness
+
+
     epsilon = 0
     # print('______ new eval______')
     for idx_episode in range(1, n_eval + 1):
@@ -65,6 +73,10 @@ def test_room_symmetric(n_eval, env, sess, list_agents,
         done = 0
         episode_energy = np.zeros(env.n_agents)  # Track energy per episode
         episode_env_rewards = np.zeros(env.n_agents)  # Track environmental rewards per episode
+
+        # per‐episode fairness accumulator
+        t = 0
+        fair_ts = []
 
         while not done:
             list_actions = []
@@ -91,7 +103,7 @@ def test_room_symmetric(n_eval, env, sess, list_agents,
             # entry (i,j) is reward that agent i gives to agent j
             matrix_given = np.zeros((env.n_agents, env.n_agents))
             for agent in list_agents:
-                if alg in ['lio', 'meta-lio', 'meta-lio-mse', 'lio-defense', 'lio-filter', 'lio-rbd']:
+                if alg in ['lio', 'REFiNE']:
                     reward = agent.give_reward(list_obs[agent.agent_id], list_actions, sess)
                 elif alg == 'pg':
                     reward, _ = agent.give_reward(list_obs[agent.agent_id], list_actions, sess)
@@ -114,6 +126,20 @@ def test_room_symmetric(n_eval, env, sess, list_agents,
                     received_at_state[list_actions[agent.agent_id]] += np.sum(matrix_given[:, agent.agent_id])
 
             list_obs_next, env_rewards, done = env.step(list_actions, list_rewards)
+            # compute per‐step team‐fairness f_t 
+            R = np.zeros(env.n_agents)
+            for i in range(env.n_agents):
+                R[i] = env_rewards[i] \
+                     + matrix_given[:,i].sum() \
+                     - matrix_given[i,:].sum()
+            # Jain’s index: (sum R)^2 / (n * sum R^2)
+            num   = np.sum(R)
+            den   = env.n_agents * np.sum(R**2) + eps
+            f_t   = (num * num) / den
+            fair_ts.append((gamma**t) * f_t)
+            t += 1
+
+
             if done == 1:
                 win += 1
             elif done == 2: 
@@ -132,9 +158,15 @@ def test_room_symmetric(n_eval, env, sess, list_agents,
             for idx in range(env.n_agents):
                 rewards_total[idx] += np.sum(matrix_given[:, idx])  # Add received rewards
                 rewards_total[idx] -= np.sum(matrix_given[idx, :])  # Subtract given rewards
+                
             list_obs = list_obs_next
         
-        
+
+        # record this episode’s discounted‐fairness
+        # discounted-average normalization
+        sum_weights = sum(gamma**t for t in range(len(fair_ts)))
+        F_T = sum(fair_ts) / sum_weights
+        fairness_list.append(F_T)
         total_steps += env.steps
         if log:
             s = '%d,' % idx_episode
@@ -151,11 +183,20 @@ def test_room_symmetric(n_eval, env, sess, list_agents,
     for idx in range(env.n_agents):
         if cumulative_energy[idx] > 0:
             reward_per_energy[idx] = cumulative_env_rewards[idx] / (cumulative_energy[idx] + 1e-8)
-
+    
+    # mean team‐fairness over all eval episodes, every agent shares the same value
+    for idx in range(env.n_agents):
+        if fairness_list[idx] > 0:
+            teamwork_fairness[idx] = float(np.mean(fairness_list))
+            print('(Every agent shares the same team fairness) Teamwork fairness for agent %d: %.3f' % (idx, teamwork_fairness[idx]))
+        else:
+            teamwork_fairness[idx] = 0
+            print('Warning: fairness is 0 for agent %d' % idx)
+    
    
     return (rewards_total, rewards_env, n_move_lever, n_move_door, rewards_received,
             rewards_given, steps_per_episode, r_lever, r_start, r_door,
-            win_rate, cumulative_energy, reward_per_energy)
+            win_rate, cumulative_energy, reward_per_energy, teamwork_fairness)
 
 
 # baseline testing function that evaluates agents without social incentives

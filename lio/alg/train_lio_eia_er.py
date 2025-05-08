@@ -1,16 +1,13 @@
-"""Trains LIO agents on Escape Room game.
+"""Trains LIO agents on Escape Room game. Attacked by EIA.
 
-Three versions of LIO:
-1. LIO built on top of policy gradient
-2. LIO built on top of actor-critic
-3. Fully decentralized version of LIO on top of policy gradient
+
 """
 
 
 from __future__ import division
 from __future__ import print_function
 
-import sys, os
+import sys, os, csv
 # Add greedy_agent_v1 path
 path_to_add = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
 sys.path.insert(0, path_to_add)
@@ -33,7 +30,7 @@ import inspect
 
 from lio.env import ipd_wrapper
 from lio.env import room_symmetric
-from lio.alg.lio_agent_greedy import greedy, adversarial
+
 
 from lola.envs.prisoners_dilemma import IteratedPrisonersDilemma
 
@@ -71,45 +68,26 @@ def train(config):
         env = room_symmetric.Env(config.env)
     elif config.env.name == 'ipd':
         env = ipd_wrapper.IPD(config.env)
-    if config.lio.decentralized:
-        from lio_decentralized_trust import LIOTrust
-    elif config.lio.use_actor_critic:
-        from lio_ac_trust import LIOTrust
-    else:
-        from lio_trust import LIOTrust
-        from lio_trust_exploitative import LIOTrustExploitative as LIOTrust_E
-        
+   
+    from lio_agent import LIO
+    
+    from lio_agent_exploitative import ExploitativeLIO as LIO_E
+
+    
     list_agents = []
- 
+
     # First agent normal
-    list_agents.append(LIOTrust(config.lio, env.l_obs, env.l_action,
-                    config.nn, 'agent_0',
-                    config.env.r_multiplier, env.n_agents,
-                    0, energy_param=1.0))
-
+    list_agents.append(LIO(config.lio, env.l_obs, env.l_action,config.nn, 'agent_0',config.env.r_multiplier, env.n_agents,0, 1.0))
+    
     # Second agent exploitative
-    list_agents.append(LIOTrust_E(config.lio, env.l_obs, env.l_action,
-                      config.nn, 'agent_1',  
-                      config.env.r_multiplier, env.n_agents,
-                      1, energy_param=1.0)) 
+    list_agents.append(LIO_E(config.lio, env.l_obs, env.l_action,config.nn, 'agent_1',config.env.r_multiplier, env.n_agents,1, 1.0))
     
-    
-
-      
-
     for agent_id in range(2, env.n_agents):
-       if config.lio.decentralized:
-            list_agent_id_opp = list(range(env.n_agents))
-            del list_agent_id_opp[agent_id]
-            list_agents.append(LIOTrust(config.lio, env.l_obs, env.l_action,
-                               config.nn, 'agent_%d' % agent_id,
-                               config.env.r_multiplier, env.n_agents,
-                               agent_id, list_agent_id_opp, energy_param=1.0))
-       else:
-            list_agents.append(LIOTrust(config.lio, env.l_obs, env.l_action,
+        list_agents.append(LIO(config.lio, env.l_obs, env.l_action,
                                config.nn, 'agent_%d' % agent_id,
                                config.env.r_multiplier, env.n_agents,
                                agent_id, 1.0))
+       
 
      
 
@@ -187,10 +165,10 @@ def train(config):
     if config.env.name == 'er':
         list_suffix = ['reward_total', 'reward_env', 'n_lever', 'n_door',
                    'received', 'given', 'r-lever', 'r-start', 'r-door', 
-                   'win_rate', 'total_energy', 'reward_per_energy']
+                   'win_rate', 'total_energy', 'reward_per_energy', 'teamwork_fairness']
     elif config.env.name == 'ipd':
         list_suffix = ['given', 'received', 'reward_env',
-                   'reward_total', 'total_energy', 'reward_per_energy']
+                   'reward_total', 'total_energy', 'reward_per_energy', 'teamwork_fairness']
     for agent_id in range(1, env.n_agents + 1):
         for suffix in list_suffix:
             list_agent_meas.append('A%d_%s' % (agent_id, suffix))
@@ -211,11 +189,7 @@ def train(config):
     
 
     for idx_episode in range(1, n_episodes + 1):
-
-        # Increment episode counter for each agent
-        for agent in list_agents:
-            agent.episode_count += 1
-
+        # policy training
         list_buffers, mission_status = run_episode(sess, env, list_agents, epsilon,
                                    prime=False)
         step += len(list_buffers[0].obs)
@@ -230,6 +204,10 @@ def train(config):
         # random.shuffle(copy_list_agents) # random agent finishing it task earlier
         for idx, agent in enumerate(list_agents):
             agent.update(sess, list_buffers[agent.agent_id], epsilon)
+
+        
+        
+        # incentive training
 
         list_buffers_new, mission_status = run_episode(sess, env, list_agents,
                                        epsilon, prime=True)
@@ -247,6 +225,7 @@ def train(config):
             else:
                 agent.update_main(sess)
 
+        
         step_train += 1
 
         if idx_episode % period == 0:
@@ -255,12 +234,13 @@ def train(config):
                
                (reward_total, rewards_env, n_move_lever, n_move_door, rewards_received,
                 rewards_given, steps_per_episode, r_lever, r_start, r_door,
-                win_rate, cumulative_energy, reward_per_energy) = evaluate.test_room_symmetric(
-                    n_eval, env, sess, list_agents, 'lio-trust')
+                win_rate, cumulative_energy, reward_per_energy, teamwork_fairness) = evaluate.test_room_symmetric(
+                    n_eval, env, sess, list_agents, 'lio')
+               
                matrix_combined = np.stack([reward_total, rewards_env, n_move_lever, n_move_door,
                              rewards_received, rewards_given,
                              r_lever, r_start, r_door, win_rate,
-                             cumulative_energy, reward_per_energy])
+                             cumulative_energy, reward_per_energy, teamwork_fairness])
             elif config.env.name == 'ipd':
                 (rewards_given, rewards_received, rewards_env,
                  rewards_total, cumulative_energy, reward_per_energy) = evaluate.test_ipd(
@@ -273,7 +253,7 @@ def train(config):
                 s += ','
                 if config.env.name == 'er':
                     s += ('{:.3e},{:.3e},{:.3e},{:.3e},{:.3e},'
-                          '{:.3e},{:.3e},{:.3e},{:.3e},{:.3e},{:.3e},{:.3e}').format(
+                          '{:.3e},{:.3e},{:.3e},{:.3e},{:.3e},{:.3e},{:.3e}, {:.3e}').format(
                           *matrix_combined[:, idx])
                 elif config.env.name == 'ipd':
                     s += '{:.3e},{:.3e},{:.3e},{:.3e},{:.3e},{:.3e}'.format(
@@ -298,10 +278,6 @@ def train(config):
             total_energy = buf.total_energy
             env_reward = sum(buf.reward)  # Only environmental rewards
             reward_per_energy = env_reward / total_energy if total_energy > 0 else 0
-
-            #print(f"Agent {agent_id} - "
-                  # f"Total Energy: {total_energy:.3f}, "
-                  # f"Reward per Energy: {reward_per_energy:.3f}")
 
     saver.save(sess, os.path.join(log_path, model_name))
 
@@ -436,17 +412,13 @@ if __name__ == '__main__':
         # For ER(4,2) experiment
         n=4 # Number of agents in the Escape Room
         m=2 # Minimum number of agents required at lever to trigger outcome
-        config.main.dir_name = 'LIO_Trust_Exploitative_test_ER42'  # Directory for exploitative agent logs
+        config.main.dir_name = 'er_lio_eia_2ndex_4_2'  # Directory for exploitative agent logs
+        # config.main.dir_name = 'er_lio_4_2' # Directory for normal agent logs
         config.env.min_at_lever = m
         config.env.n_agents = n
         config.main.exp_name = 'er%d'%args.num
         # config.main.seed = 12340 + args.num
         # config.main.seed = random.random()
-    elif args.exp == 'ipd':
-        config = config_ipd_lio.get_config()
-        config.main.dir_name = 'ipd_bignum2'
-        config.main.exp_name = 'ipd%d'%args.num
-        config.main.seed = 12340 + args.num
 
     train(config)
     print("set %d done"%args.num)

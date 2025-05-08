@@ -1,5 +1,5 @@
-"""LIO framework with defense by weighted reward NSW fairness"""
-"""2nd agent being exploitative, pushing other agents to work more by incentives."""
+
+"""REFiNE add the real time fairness term, and consider energy consumption."""
 import numpy as np
 import tensorflow as tf
 
@@ -9,11 +9,12 @@ from lio.alg import networks
 import lio.utils.util as util
 
 
-class LIODefenseExploitative(object):
+class REFiNE(object):
 
     def __init__(self, config, l_obs, l_action, nn, agent_name,
                  r_multiplier=2, n_agents=1, agent_id=0, energy_param=1.0):
-        self.alg_name = 'lio-defense'
+       
+        self.alg_name = 'REFiNE'
         self.l_obs = l_obs
         self.l_action = l_action
         self.nn = nn
@@ -22,15 +23,13 @@ class LIODefenseExploitative(object):
         self.n_agents = n_agents
         self.agent_id = agent_id
         self.energy_param = energy_param  # New parameter for energy
-        self.min_at_lever = 1 # Minimum agents needed to pull lever for ER(2,1) case
-
-        # Initialize weight parameters        
-        self.sigma1 = tf.Variable(1.0, name='sigma1')     
-        self.sigma2 = tf.Variable(1.0, name='sigma2') 
-        
+        self.min_at_lever = 2 # Minimum agents needed to pull lever for ER(4,2) case
+        self.n_agents = n_agents  
+        # Add tracking for incentives given per episode
+        self.episode_incentives_given = 0.0
         self.list_other_id = list(range(0, self.n_agents))
         del self.list_other_id[self.agent_id]
-
+        self.beta = config.energy_weight
         # Default is allow the agent to give rewards
         self.can_give = True
 
@@ -52,7 +51,8 @@ class LIODefenseExploitative(object):
 
         self.create_networks()
         self.policy_new = PolicyNew
-        print(f"Initializing LIO Defense Exploitative agent {self.agent_name} with energy_param: {energy_param}")
+        print(f"Initializing REFiNE agent {self.agent_name} with energy_param: {energy_param}")
+
 
     def get_num_at_lever(self, state):
         """Gets number of agents currently at lever position.
@@ -76,7 +76,7 @@ class LIODefenseExploitative(object):
            if state[agent_idx] == 0:  
                num_at_lever += 1
             
-        return num_at_lever       
+        return num_at_lever   
 
         
     def create_networks(self):
@@ -125,57 +125,64 @@ class LIODefenseExploitative(object):
 
     def calculate_energy_cost(self, state, action):
         """Calculate energy cost that reflects both physical effort and contribution.
-
+    
         Args:
             state: Current state showing if M agents are at lever
             action: Action taken (0: lever, 1: move, 2: door) 
         Returns:
             energy_cost: Amount of energy consumed for this action
+
         Define Base physical energy costs for ER case running by Nano: the sum of (Active) Motor, Communication, Computation, and Sensing
         (Active) Motor : 11.10W
         Communication: 0.99W
         Computation: 0.54W
         Sensing: 1.90W
+
         for Pulling the Lever:
            Active motor operation: 11.10W
            Consistent communication: 0.99W
            Computation: 0.54W
            Sensing: 1.90W
            Total: 14.53W
+
         for Simply Moving
             Moderate motor operation (60% of active): 6.66W
             Consistent communication: 0.99W
             Computation: 0.54W
             Sensing: 1.90W
             Total: 10.09W
+
         for Moving Out from the Door
             Brief motor operation (40% of active): 4.44W
             Consistent communication: 0.99W
             Computation: 0.54W
             Sensing: 1.90W
             Total: 7.87W
+
         MOVE_BASE_COST = 10.09
         LEVER_BASE_COST = 14.53
         DOOR_BASE_COST = 7.87
         """
 
+        
+
+
         # Base physical energy costs
         MOVE_BASE_COST = 10.09
         LEVER_BASE_COST = 14.53
         DOOR_BASE_COST = 7.87
-
+    
         # Get number of agents currently at lever from state
         num_at_lever = self.get_num_at_lever(state)
-        min_required = self.min_at_lever  # e.g. 1 for ER(2,1)
-
+        min_required = self.min_at_lever  # e.g. 2 for ER(4,2)
+    
         if action == 0:  # Lever pulling
            # Higher cost for being first/early lever puller vs joining others
            solo_factor = 2.0 if num_at_lever == 0 else 1.0
            return self.energy_param * LEVER_BASE_COST * solo_factor
-
+        
         elif action == 1:  # Moving
            return self.energy_param * MOVE_BASE_COST
-
         elif action == 2:  # Door
             if num_at_lever >= min_required:
                # Door action costs less when others have done the work
@@ -184,7 +191,7 @@ class LIODefenseExploitative(object):
             else:
                # Failed door attempt costs normal movement energy
                return self.energy_param * DOOR_BASE_COST
-
+            
         else:
             raise ValueError(f"Invalid action: {action}")
 
@@ -201,46 +208,32 @@ class LIODefenseExploitative(object):
 
 
     def give_reward(self, obs, action_all, sess):
-        """Manipulative reward giving strategy.
-        
-        Instead of giving rewards based on helpful actions,
-        gives rewards that condition other agents to work more
-        while the exploitative agent does less.
-        """
-        if not self.can_give:
-            return np.zeros(self.n_agents)
-        
-        
-
         action_others_1hot = util.get_action_others_1hot(action_all, self.agent_id,
                                                          self.l_action)
         feed = {self.obs: np.array([obs]),
                 self.action_others: np.array([action_others_1hot])}
-        
-        # Get base rewards from incentive network
-        reward = sess.run(self.reward_function, feed_dict=feed).flatten()
-        
-        # Manipulate rewards to exploit others:
-        # - High rewards for others doing work (lever pulling)
-        # - Low rewards for door actions
-        # - Ignore own position
-        for i, action in enumerate(action_all):
-            if i != self.agent_id:
-                if action == 0:  # Lever pulling
-                    reward[i] = 2.0 * reward[i]  # Amplify rewards for work
-                    
-                elif action == 2:  # Door
-                    reward[i] = 0.2 * reward[i]  # Minimize rewards for competing action
-                    
+        reward = sess.run(self.reward_function, feed_dict=feed)
         reward = reward.flatten() * self.r_multiplier
-
-    
+        
         return reward
+
+    def reset_episode_tracking(self):
+        # Add this new method to reset tracking at the start of each episode
+        self.episode_incentives_given = 0.0
 
     def create_policy_gradient_op(self):
         self.r_ext = tf.placeholder(tf.float32, [None], 'r_ext')
+        # total energy penalty (scalar per episode)
+        self.energy_penalty = tf.placeholder(tf.float32, None, 'energy_penalty')
+        
+        # total fairness term (scalar per episode)
+        self.fairness = tf.placeholder(tf.float32, shape=(),name='fairness')
 
-        r2 = self.r_ext
+        # distribute episode‐wide energy & fairness evenly across steps
+        steps = tf.cast(tf.shape(self.r_ext)[0], tf.float32)
+        r2 = self.r_ext \
+            - (self.beta * self.energy_penalty)/steps \
+            +    self.fairness     /steps
         this_agent_1hot = tf.one_hot(indices=self.agent_id, depth=self.n_agents)
         for other_id in self.list_other_id:
             r2 += self.r_multiplier * tf.reduce_sum(
@@ -297,41 +290,10 @@ class LIODefenseExploitative(object):
         policy_opt_prime = tf.train.GradientDescentOptimizer(self.lr_actor)
         self.policy_op_prime = policy_opt_prime.minimize(loss)
 
-
-    
     def create_reward_train_op(self):
-        """Modified reward training op with weighted NSW fairness."""
         list_reward_loss = []
         self.list_policy_new = [0 for x in range(self.n_agents)]
         self.returns = tf.placeholder(tf.float32, [None], 'returns')
-
-        # Calculate NSW fairness term using rewards already in the graph.
-        rewards = []
-        for agent in self.list_of_agents:
-            if agent.agent_id == self.agent_id:
-                rewards.append(tf.reduce_mean(self.r_ext))
-            else:
-                rewards.append(tf.reduce_mean(agent.r_ext))    
-                
-    
-        # Stack rewards into a tensor
-        rewards = tf.stack(rewards)
-    
-        # Calculate mean reward
-        mean_reward = tf.reduce_mean(rewards)
-    
-        # Calculate NSW 
-        nsw_terms = []
-        epsilon = 1e-8
-        for i in range(self.n_agents):
-            reward = rewards[i]
-            diff = tf.abs(reward - mean_reward) + epsilon
-            nsw_terms.append(mean_reward / diff)
-    
-        nsw_terms = tf.stack(nsw_terms)
-        self.nsw_fairness = tf.pow(tf.reduce_prod(nsw_terms), 1.0/self.n_agents)
-
-        
 
         for agent in self.list_of_agents:
             if agent.agent_id == self.agent_id and not self.include_cost_in_chain_rule:
@@ -369,37 +331,20 @@ class LIODefenseExploitative(object):
             else:
                 self.reward_loss = (tf.reduce_sum(list_reward_loss) +
                                     self.reg_coeff * total_given)
-
-        # weighted loss of original reward loss with NSW fairness
-        # the negative one of the true value, as to maximize the total loss
-        self.total_loss = (1.0/(self.sigma1**2)) * self.reward_loss + \
-                    (1.0/(self.sigma2**2)) * (-self.nsw_fairness) - \
-                     2.0 * tf.math.log(self.sigma1) - \
-                     2.0 * tf.math.log(self.sigma2)        
-        
-        
-
-
             
         if self.optimizer == 'sgd':
             reward_opt = tf.train.GradientDescentOptimizer(self.lr_reward)
-            sigma_opt = tf.train.GradientDescentOptimizer(self.lr_reward)  # Use same learning rate for weights
             if self.separate_cost_optimizer:
                 cost_opt = tf.train.GradientDescentOptimizer(self.lr_cost)
         elif self.optimizer == 'adam':
             reward_opt = tf.train.AdamOptimizer(self.lr_reward)
-            sigma_opt = tf.train.AdamOptimizer(self.lr_reward)  # Use same learning rate for weights
             if self.separate_cost_optimizer:
                 cost_opt = tf.train.AdamOptimizer(self.lr_cost)
-        # Create optimization ops:
-        # For sigma parameters: minimize total_loss 
-        self.sigma_op = sigma_opt.minimize(-self.total_loss, var_list=[self.sigma1, self.sigma2])
-        # For incentive parameters: maximize total_loss       
-        self.reward_op = reward_opt.minimize(self.total_loss)
+        self.reward_op = reward_opt.minimize(self.reward_loss)
         if self.separate_cost_optimizer:
             self.cost_op = cost_opt.minimize(total_given)
 
-    def update(self, sess, buf, epsilon):
+    def update(self, sess, buf, epsilon, energy_penalty, fairness):
         sess.run(self.list_copy_main_to_prime_ops)
 
         n_steps = len(buf.obs)
@@ -411,13 +356,13 @@ class LIODefenseExploitative(object):
                 self.ones: ones,
                 self.epsilon: epsilon}
         
-
+        
 
         sum_r_from_other = []
-        for reward_matrix in buf.r_from_others:
-            # Extract rewards received by this agent
-            rewards_received = reward_matrix[:, self.agent_id]
-            sum_r_from_other.append(np.sum(rewards_received))
+        # print(buf.r_from_others)
+        for reward in buf.r_from_others:
+            temp = np.sum(reward, axis=0, keepdims=False)
+            sum_r_from_other.append(temp[self.agent_id])
 
         # Ensure lengths match
         if len(sum_r_from_other) < len(buf.reward):
@@ -426,7 +371,10 @@ class LIODefenseExploitative(object):
 
         # print(sum_r_from_other)
         feed[self.r_from_others] = sum_r_from_other
-        # feed[self.r_from_others] = buf.r_from_others
+        # plug in episode energy & fairness
+        feed[self.energy_penalty] = energy_penalty
+        feed[self.fairness] = fairness
+       
         if self.include_cost_in_chain_rule:
             feed[self.r_given] = buf.r_given
 
@@ -437,23 +385,18 @@ class LIODefenseExploitative(object):
         buf_self = list_buf[self.agent_id]
         buf_self_new = list_buf_new[self.agent_id]
 
-
-
         n_steps = len(buf_self.obs)
         ones = np.ones(n_steps)
 
-        feed = {self.r_ext: buf_self.reward}
-        # Process r_from_others to extract just the rewards received by this agent
-        processed_rewards = []
-        for r_matrix in buf_self.r_from_others:
-            # Get the column corresponding to rewards received by this agent
-            rewards_received = r_matrix[:, self.agent_id]
-            processed_rewards.append(np.sum(rewards_received))  # Sum rewards from all other agents
+        feed = {}
 
-        # Update feed with processed rewards 
-        feed[self.r_from_others] = processed_rewards
-
-
+        for agent in self.list_of_agents:
+            # Add energy penalty and fairness for all agents
+            if hasattr(agent, 'energy_penalty'):
+               feed[agent.energy_penalty] = 0.0  # Default value for training rewards
+            if hasattr(agent, 'fairness'):
+               feed[agent.fairness] = 0.0  # Default value for training rewards
+               
         for agent in self.list_of_agents:
             other_id = agent.agent_id
             if other_id == self.agent_id:
@@ -510,23 +453,11 @@ class LIODefenseExploitative(object):
 
         feed[self.returns] = returns_new
 
-        # Create separate feed dict for NSW calculation 
-        nsw_feed = feed.copy()
-        if self.agent_id not in feed:
-           nsw_feed[self.r_ext] = buf_self.reward
-
-         
-
         if self.separate_cost_optimizer:
-            # First update sigma parameters
-            _ = sess.run(self.sigma_op, feed_dict=nsw_feed)
-            # Then update incentive parameters and cost
-            _  = sess.run([self.reward_op, self.cost_op], feed_dict=feed)
+            _ = sess.run([self.reward_op, self.cost_op], feed_dict=feed)
         else:
-            # First update sigma parameters
-            _ = sess.run(self.sigma_op, feed_dict=nsw_feed)
-            # Then update incentive parameters
-            _ = sess.run(self.reward_op,feed_dict=feed)
+            _ = sess.run(self.reward_op, feed_dict=feed)
+
         
     def update_main(self, sess):
         sess.run(self.list_copy_prime_to_main_ops)

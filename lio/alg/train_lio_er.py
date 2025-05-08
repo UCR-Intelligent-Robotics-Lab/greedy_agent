@@ -80,20 +80,7 @@ def train(config):
         from lio_agent_greedy import LIO as LIO_G
         from lio_agent_exploitative import ExploitativeLIO as LIO_E
 
-    # Create CSV files and write headers
-    policy_csv_path = os.path.join(log_path, 'given_incentives_sum_policy_log.csv')
-    incentive_csv_path = os.path.join(log_path, 'given_incentives_sum_incentive_log.csv')
     
-    with open(policy_csv_path, 'w', newline='') as f:
-        writer = csv.writer(f)
-        header = ['episode'] + [f'agent_{i}_incentives' for i in range(env.n_agents)]
-        writer.writerow(header)
-    
-    with open(incentive_csv_path, 'w', newline='') as f:
-        writer = csv.writer(f)
-        header = ['episode'] + [f'agent_{i}_incentives' for i in range(env.n_agents)]
-        writer.writerow(header)
-
     list_agents = []
 
     # First agent normal
@@ -185,10 +172,10 @@ def train(config):
     if config.env.name == 'er':
         list_suffix = ['reward_total', 'reward_env', 'n_lever', 'n_door',
                    'received', 'given', 'r-lever', 'r-start', 'r-door', 
-                   'win_rate', 'total_energy', 'reward_per_energy']
+                   'win_rate', 'total_energy', 'reward_per_energy', 'teamwork_fairness']
     elif config.env.name == 'ipd':
         list_suffix = ['given', 'received', 'reward_env',
-                   'reward_total', 'total_energy', 'reward_per_energy']
+                   'reward_total', 'total_energy', 'reward_per_energy', 'teamwork_fairness']
     for agent_id in range(1, env.n_agents + 1):
         for suffix in list_suffix:
             list_agent_meas.append('A%d_%s' % (agent_id, suffix))
@@ -209,10 +196,7 @@ def train(config):
     
 
     for idx_episode in range(1, n_episodes + 1):
-        # Reset tracking at the start of each episode
-        for agent in list_agents:
-            agent.reset_episode_tracking()
-
+        # policy training
         list_buffers, mission_status = run_episode(sess, env, list_agents, epsilon,
                                    prime=False)
         step += len(list_buffers[0].obs)
@@ -228,19 +212,9 @@ def train(config):
         for idx, agent in enumerate(list_agents):
             agent.update(sess, list_buffers[agent.agent_id], epsilon)
 
-        # After the policy training episode, store the incentives given by each agent
-        policy_incentives = [idx_episode]
-        for idx, agent in enumerate(list_agents):
-            policy_incentives.append(agent.episode_incentives_given)
-            print("agent %d given incentive sum saved in policy training: %.6f" % (idx, agent.episode_incentives_given))
         
-        # Write to the policy CSV file
-        with open(policy_csv_path, 'a', newline='') as f:
-            writer = csv.writer(f)
-            writer.writerow(policy_incentives)
-        # Reset tracking before the incentive training episode (for list_buffers_new)
-        for agent in list_agents:
-            agent.reset_episode_tracking()
+        
+        # incentive training
 
         list_buffers_new, mission_status = run_episode(sess, env, list_agents,
                                        epsilon, prime=True)
@@ -258,20 +232,7 @@ def train(config):
             else:
                 agent.update_main(sess)
 
-        # After the incentive training episode, store the incentives given by each agent
-        incentive_incentives = [idx_episode]
-        for idx, agent in enumerate(list_agents):
-            incentive_incentives.append(agent.episode_incentives_given)
-            print("agent %d given incentive sum saved in incentive training: %.6f" % (idx, agent.episode_incentives_given))
         
-        # Write to the incentive CSV file
-        with open(incentive_csv_path, 'a', newline='') as f:
-            writer = csv.writer(f)
-            writer.writerow(incentive_incentives)
-
-        # Reset tracking before the the start of next episode
-        for agent in list_agents:
-            agent.reset_episode_tracking()
         step_train += 1
 
         if idx_episode % period == 0:
@@ -280,12 +241,13 @@ def train(config):
                
                (reward_total, rewards_env, n_move_lever, n_move_door, rewards_received,
                 rewards_given, steps_per_episode, r_lever, r_start, r_door,
-                win_rate, cumulative_energy, reward_per_energy) = evaluate.test_room_symmetric(
+                win_rate, cumulative_energy, reward_per_energy, teamwork_fairness) = evaluate.test_room_symmetric(
                     n_eval, env, sess, list_agents, 'lio')
+               
                matrix_combined = np.stack([reward_total, rewards_env, n_move_lever, n_move_door,
                              rewards_received, rewards_given,
                              r_lever, r_start, r_door, win_rate,
-                             cumulative_energy, reward_per_energy])
+                             cumulative_energy, reward_per_energy, teamwork_fairness])
             elif config.env.name == 'ipd':
                 (rewards_given, rewards_received, rewards_env,
                  rewards_total, cumulative_energy, reward_per_energy) = evaluate.test_ipd(
@@ -298,7 +260,7 @@ def train(config):
                 s += ','
                 if config.env.name == 'er':
                     s += ('{:.3e},{:.3e},{:.3e},{:.3e},{:.3e},'
-                          '{:.3e},{:.3e},{:.3e},{:.3e},{:.3e},{:.3e},{:.3e}').format(
+                          '{:.3e},{:.3e},{:.3e},{:.3e},{:.3e},{:.3e},{:.3e}, {:.3e}').format(
                           *matrix_combined[:, idx])
                 elif config.env.name == 'ipd':
                     s += '{:.3e},{:.3e},{:.3e},{:.3e},{:.3e},{:.3e}'.format(
