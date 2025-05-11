@@ -71,14 +71,10 @@ def train(config):
         env = room_symmetric.Env(config.env)
     elif config.env.name == 'ipd':
         env = ipd_wrapper.IPD(config.env)
-    if config.lio.decentralized:
-        from lio_decentralized import LIO
-    elif config.lio.use_actor_critic:
-        from lio_ac import LIO
-    else:
-        from lio_agent import LIO
-        from lio_agent_greedy import LIO as LIO_G
-        from lio_agent_exploitative import ExploitativeLIO as LIO_E
+    
+    from lio_agent import LIO
+    
+        
 
     
     list_agents = []

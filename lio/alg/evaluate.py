@@ -25,7 +25,7 @@ def test_room_symmetric(n_eval, env, sess, list_agents,
         env: env object
         sess: TF session
         list_agents: list of agent objects
-        alg: one of ['lio', 'REFiNE' 'pg'] 
+        alg: one of ['lio', 'REFiNE','pg'] 
         log: if True, measure rewards given/received at each state
 
     If alg=='pg', then agents must be the version of PG with 
@@ -130,8 +130,7 @@ def test_room_symmetric(n_eval, env, sess, list_agents,
             R = np.zeros(env.n_agents)
             for i in range(env.n_agents):
                 R[i] = env_rewards[i] \
-                     + matrix_given[:,i].sum() \
-                     - matrix_given[i,:].sum()
+                     + matrix_given[:,i].sum() 
             # Jain’s index: (sum R)^2 / (n * sum R^2)
             num   = np.sum(R)
             den   = env.n_agents * np.sum(R**2) + eps
@@ -157,7 +156,7 @@ def test_room_symmetric(n_eval, env, sess, list_agents,
             rewards_total += env_rewards
             for idx in range(env.n_agents):
                 rewards_total[idx] += np.sum(matrix_given[:, idx])  # Add received rewards
-                rewards_total[idx] -= np.sum(matrix_given[idx, :])  # Subtract given rewards
+                # rewards_total[idx] -= np.sum(matrix_given[idx, :])  # Subtract given rewards
                 
             list_obs = list_obs_next
         

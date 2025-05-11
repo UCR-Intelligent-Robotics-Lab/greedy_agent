@@ -1,0 +1,221 @@
+/home/yifan/anaconda3/envs/lio_zzl/lib/python3.6/site-packages/tensorflow/python/framework/dtypes.py:523: FutureWarning: Passing (type, 1) or '1type' as a synonym of type is deprecated; in a future version of numpy, it will be understood as (type, (1,)) / '(1,)type'.
+  _np_qint8 = np.dtype([("qint8", np.int8, 1)])
+/home/yifan/anaconda3/envs/lio_zzl/lib/python3.6/site-packages/tensorflow/python/framework/dtypes.py:524: FutureWarning: Passing (type, 1) or '1type' as a synonym of type is deprecated; in a future version of numpy, it will be understood as (type, (1,)) / '(1,)type'.
+  _np_quint8 = np.dtype([("quint8", np.uint8, 1)])
+/home/yifan/anaconda3/envs/lio_zzl/lib/python3.6/site-packages/tensorflow/python/framework/dtypes.py:525: FutureWarning: Passing (type, 1) or '1type' as a synonym of type is deprecated; in a future version of numpy, it will be understood as (type, (1,)) / '(1,)type'.
+  _np_qint16 = np.dtype([("qint16", np.int16, 1)])
+/home/yifan/anaconda3/envs/lio_zzl/lib/python3.6/site-packages/tensorflow/python/framework/dtypes.py:526: FutureWarning: Passing (type, 1) or '1type' as a synonym of type is deprecated; in a future version of numpy, it will be understood as (type, (1,)) / '(1,)type'.
+  _np_quint16 = np.dtype([("quint16", np.uint16, 1)])
+/home/yifan/anaconda3/envs/lio_zzl/lib/python3.6/site-packages/tensorflow/python/framework/dtypes.py:527: FutureWarning: Passing (type, 1) or '1type' as a synonym of type is deprecated; in a future version of numpy, it will be understood as (type, (1,)) / '(1,)type'.
+  _np_qint32 = np.dtype([("qint32", np.int32, 1)])
+/home/yifan/anaconda3/envs/lio_zzl/lib/python3.6/site-packages/tensorflow/python/framework/dtypes.py:532: FutureWarning: Passing (type, 1) or '1type' as a synonym of type is deprecated; in a future version of numpy, it will be understood as (type, (1,)) / '(1,)type'.
+  np_resource = np.dtype([("resource", np.ubyte, 1)])
+Couldn't import TensorFlow - disabling TensorBoard logging.
+2025-05-11 00:37:22.749463: I tensorflow/core/platform/cpu_feature_guard.cc:141] Your CPU supports instructions that this TensorFlow binary was not compiled to use: AVX2 FMA
+2025-05-11 00:37:22.762800: I tensorflow/core/common_runtime/gpu/gpu_device.cc:982] Device interconnect StreamExecutor with strength 1 edge matrix:
+2025-05-11 00:37:22.762821: I tensorflow/core/common_runtime/gpu/gpu_device.cc:988]      
+Initializing LIO agent agent_0 with energy_param: 1.0
+Initializing LIO exploitative agent agent_1 with energy_param: 1.0
+Initializing LIO agent agent_2 with energy_param: 1.0
+Initializing LIO agent agent_3 with energy_param: 1.0
+(Every agent shares the same team fairness) Teamwork fairness for agent 0: 0.541
+(Every agent shares the same team fairness) Teamwork fairness for agent 1: 0.541
+(Every agent shares the same team fairness) Teamwork fairness for agent 2: 0.541
+(Every agent shares the same team fairness) Teamwork fairness for agent 3: 0.541
+(Every agent shares the same team fairness) Teamwork fairness for agent 0: 0.478
+(Every agent shares the same team fairness) Teamwork fairness for agent 1: 0.478
+(Every agent shares the same team fairness) Teamwork fairness for agent 2: 0.478
+(Every agent shares the same team fairness) Teamwork fairness for agent 3: 0.478
+(Every agent shares the same team fairness) Teamwork fairness for agent 0: 0.437
+(Every agent shares the same team fairness) Teamwork fairness for agent 1: 0.437
+(Every agent shares the same team fairness) Teamwork fairness for agent 2: 0.437
+(Every agent shares the same team fairness) Teamwork fairness for agent 3: 0.437
+(Every agent shares the same team fairness) Teamwork fairness for agent 0: 0.553
+(Every agent shares the same team fairness) Teamwork fairness for agent 1: 0.553
+(Every agent shares the same team fairness) Teamwork fairness for agent 2: 0.553
+(Every agent shares the same team fairness) Teamwork fairness for agent 3: 0.553
+(Every agent shares the same team fairness) Teamwork fairness for agent 0: 0.507
+(Every agent shares the same team fairness) Teamwork fairness for agent 1: 0.507
+(Every agent shares the same team fairness) Teamwork fairness for agent 2: 0.507
+(Every agent shares the same team fairness) Teamwork fairness for agent 3: 0.507
+(Every agent shares the same team fairness) Teamwork fairness for agent 0: 0.453
+(Every agent shares the same team fairness) Teamwork fairness for agent 1: 0.453
+(Every agent shares the same team fairness) Teamwork fairness for agent 2: 0.453
+(Every agent shares the same team fairness) Teamwork fairness for agent 3: 0.453
+(Every agent shares the same team fairness) Teamwork fairness for agent 0: 0.513
+(Every agent shares the same team fairness) Teamwork fairness for agent 1: 0.513
+(Every agent shares the same team fairness) Teamwork fairness for agent 2: 0.513
+(Every agent shares the same team fairness) Teamwork fairness for agent 3: 0.513
+(Every agent shares the same team fairness) Teamwork fairness for agent 0: 0.480
+(Every agent shares the same team fairness) Teamwork fairness for agent 1: 0.480
+(Every agent shares the same team fairness) Teamwork fairness for agent 2: 0.480
+(Every agent shares the same team fairness) Teamwork fairness for agent 3: 0.480
+(Every agent shares the same team fairness) Teamwork fairness for agent 0: 0.411
+(Every agent shares the same team fairness) Teamwork fairness for agent 1: 0.411
+(Every agent shares the same team fairness) Teamwork fairness for agent 2: 0.411
+(Every agent shares the same team fairness) Teamwork fairness for agent 3: 0.411
+(Every agent shares the same team fairness) Teamwork fairness for agent 0: 0.422
+(Every agent shares the same team fairness) Teamwork fairness for agent 1: 0.422
+(Every agent shares the same team fairness) Teamwork fairness for agent 2: 0.422
+(Every agent shares the same team fairness) Teamwork fairness for agent 3: 0.422
+(Every agent shares the same team fairness) Teamwork fairness for agent 0: 0.433
+(Every agent shares the same team fairness) Teamwork fairness for agent 1: 0.433
+(Every agent shares the same team fairness) Teamwork fairness for agent 2: 0.433
+(Every agent shares the same team fairness) Teamwork fairness for agent 3: 0.433
+(Every agent shares the same team fairness) Teamwork fairness for agent 0: 0.410
+(Every agent shares the same team fairness) Teamwork fairness for agent 1: 0.410
+(Every agent shares the same team fairness) Teamwork fairness for agent 2: 0.410
+(Every agent shares the same team fairness) Teamwork fairness for agent 3: 0.410
+(Every agent shares the same team fairness) Teamwork fairness for agent 0: 0.434
+(Every agent shares the same team fairness) Teamwork fairness for agent 1: 0.434
+(Every agent shares the same team fairness) Teamwork fairness for agent 2: 0.434
+(Every agent shares the same team fairness) Teamwork fairness for agent 3: 0.434
+(Every agent shares the same team fairness) Teamwork fairness for agent 0: 0.422
+(Every agent shares the same team fairness) Teamwork fairness for agent 1: 0.422
+(Every agent shares the same team fairness) Teamwork fairness for agent 2: 0.422
+(Every agent shares the same team fairness) Teamwork fairness for agent 3: 0.422
+(Every agent shares the same team fairness) Teamwork fairness for agent 0: 0.426
+(Every agent shares the same team fairness) Teamwork fairness for agent 1: 0.426
+(Every agent shares the same team fairness) Teamwork fairness for agent 2: 0.426
+(Every agent shares the same team fairness) Teamwork fairness for agent 3: 0.426
+(Every agent shares the same team fairness) Teamwork fairness for agent 0: 0.401
+(Every agent shares the same team fairness) Teamwork fairness for agent 1: 0.401
+(Every agent shares the same team fairness) Teamwork fairness for agent 2: 0.401
+(Every agent shares the same team fairness) Teamwork fairness for agent 3: 0.401
+(Every agent shares the same team fairness) Teamwork fairness for agent 0: 0.522
+(Every agent shares the same team fairness) Teamwork fairness for agent 1: 0.522
+(Every agent shares the same team fairness) Teamwork fairness for agent 2: 0.522
+(Every agent shares the same team fairness) Teamwork fairness for agent 3: 0.522
+(Every agent shares the same team fairness) Teamwork fairness for agent 0: 0.401
+(Every agent shares the same team fairness) Teamwork fairness for agent 1: 0.401
+(Every agent shares the same team fairness) Teamwork fairness for agent 2: 0.401
+(Every agent shares the same team fairness) Teamwork fairness for agent 3: 0.401
+(Every agent shares the same team fairness) Teamwork fairness for agent 0: 0.436
+(Every agent shares the same team fairness) Teamwork fairness for agent 1: 0.436
+(Every agent shares the same team fairness) Teamwork fairness for agent 2: 0.436
+(Every agent shares the same team fairness) Teamwork fairness for agent 3: 0.436
+(Every agent shares the same team fairness) Teamwork fairness for agent 0: 0.428
+(Every agent shares the same team fairness) Teamwork fairness for agent 1: 0.428
+(Every agent shares the same team fairness) Teamwork fairness for agent 2: 0.428
+(Every agent shares the same team fairness) Teamwork fairness for agent 3: 0.428
+(Every agent shares the same team fairness) Teamwork fairness for agent 0: 0.470
+(Every agent shares the same team fairness) Teamwork fairness for agent 1: 0.470
+(Every agent shares the same team fairness) Teamwork fairness for agent 2: 0.470
+(Every agent shares the same team fairness) Teamwork fairness for agent 3: 0.470
+(Every agent shares the same team fairness) Teamwork fairness for agent 0: 0.433
+(Every agent shares the same team fairness) Teamwork fairness for agent 1: 0.433
+(Every agent shares the same team fairness) Teamwork fairness for agent 2: 0.433
+(Every agent shares the same team fairness) Teamwork fairness for agent 3: 0.433
+(Every agent shares the same team fairness) Teamwork fairness for agent 0: 0.401
+(Every agent shares the same team fairness) Teamwork fairness for agent 1: 0.401
+(Every agent shares the same team fairness) Teamwork fairness for agent 2: 0.401
+(Every agent shares the same team fairness) Teamwork fairness for agent 3: 0.401
+(Every agent shares the same team fairness) Teamwork fairness for agent 0: 0.421
+(Every agent shares the same team fairness) Teamwork fairness for agent 1: 0.421
+(Every agent shares the same team fairness) Teamwork fairness for agent 2: 0.421
+(Every agent shares the same team fairness) Teamwork fairness for agent 3: 0.421
+(Every agent shares the same team fairness) Teamwork fairness for agent 0: 0.401
+(Every agent shares the same team fairness) Teamwork fairness for agent 1: 0.401
+(Every agent shares the same team fairness) Teamwork fairness for agent 2: 0.401
+(Every agent shares the same team fairness) Teamwork fairness for agent 3: 0.401
+(Every agent shares the same team fairness) Teamwork fairness for agent 0: 0.421
+(Every agent shares the same team fairness) Teamwork fairness for agent 1: 0.421
+(Every agent shares the same team fairness) Teamwork fairness for agent 2: 0.421
+(Every agent shares the same team fairness) Teamwork fairness for agent 3: 0.421
+(Every agent shares the same team fairness) Teamwork fairness for agent 0: 0.473
+(Every agent shares the same team fairness) Teamwork fairness for agent 1: 0.473
+(Every agent shares the same team fairness) Teamwork fairness for agent 2: 0.473
+(Every agent shares the same team fairness) Teamwork fairness for agent 3: 0.473
+(Every agent shares the same team fairness) Teamwork fairness for agent 0: 0.433
+(Every agent shares the same team fairness) Teamwork fairness for agent 1: 0.433
+(Every agent shares the same team fairness) Teamwork fairness for agent 2: 0.433
+(Every agent shares the same team fairness) Teamwork fairness for agent 3: 0.433
+(Every agent shares the same team fairness) Teamwork fairness for agent 0: 0.409
+(Every agent shares the same team fairness) Teamwork fairness for agent 1: 0.409
+(Every agent shares the same team fairness) Teamwork fairness for agent 2: 0.409
+(Every agent shares the same team fairness) Teamwork fairness for agent 3: 0.409
+(Every agent shares the same team fairness) Teamwork fairness for agent 0: 0.379
+(Every agent shares the same team fairness) Teamwork fairness for agent 1: 0.379
+(Every agent shares the same team fairness) Teamwork fairness for agent 2: 0.379
+(Every agent shares the same team fairness) Teamwork fairness for agent 3: 0.379
+(Every agent shares the same team fairness) Teamwork fairness for agent 0: 0.377
+(Every agent shares the same team fairness) Teamwork fairness for agent 1: 0.377
+(Every agent shares the same team fairness) Teamwork fairness for agent 2: 0.377
+(Every agent shares the same team fairness) Teamwork fairness for agent 3: 0.377
+(Every agent shares the same team fairness) Teamwork fairness for agent 0: 0.433
+(Every agent shares the same team fairness) Teamwork fairness for agent 1: 0.433
+(Every agent shares the same team fairness) Teamwork fairness for agent 2: 0.433
+(Every agent shares the same team fairness) Teamwork fairness for agent 3: 0.433
+(Every agent shares the same team fairness) Teamwork fairness for agent 0: 0.421
+(Every agent shares the same team fairness) Teamwork fairness for agent 1: 0.421
+(Every agent shares the same team fairness) Teamwork fairness for agent 2: 0.421
+(Every agent shares the same team fairness) Teamwork fairness for agent 3: 0.421
+(Every agent shares the same team fairness) Teamwork fairness for agent 0: 0.411
+(Every agent shares the same team fairness) Teamwork fairness for agent 1: 0.411
+(Every agent shares the same team fairness) Teamwork fairness for agent 2: 0.411
+(Every agent shares the same team fairness) Teamwork fairness for agent 3: 0.411
+(Every agent shares the same team fairness) Teamwork fairness for agent 0: 0.453
+(Every agent shares the same team fairness) Teamwork fairness for agent 1: 0.453
+(Every agent shares the same team fairness) Teamwork fairness for agent 2: 0.453
+(Every agent shares the same team fairness) Teamwork fairness for agent 3: 0.453
+(Every agent shares the same team fairness) Teamwork fairness for agent 0: 0.409
+(Every agent shares the same team fairness) Teamwork fairness for agent 1: 0.409
+(Every agent shares the same team fairness) Teamwork fairness for agent 2: 0.409
+(Every agent shares the same team fairness) Teamwork fairness for agent 3: 0.409
+(Every agent shares the same team fairness) Teamwork fairness for agent 0: 0.461
+(Every agent shares the same team fairness) Teamwork fairness for agent 1: 0.461
+(Every agent shares the same team fairness) Teamwork fairness for agent 2: 0.461
+(Every agent shares the same team fairness) Teamwork fairness for agent 3: 0.461
+(Every agent shares the same team fairness) Teamwork fairness for agent 0: 0.442
+(Every agent shares the same team fairness) Teamwork fairness for agent 1: 0.442
+(Every agent shares the same team fairness) Teamwork fairness for agent 2: 0.442
+(Every agent shares the same team fairness) Teamwork fairness for agent 3: 0.442
+(Every agent shares the same team fairness) Teamwork fairness for agent 0: 0.453
+(Every agent shares the same team fairness) Teamwork fairness for agent 1: 0.453
+(Every agent shares the same team fairness) Teamwork fairness for agent 2: 0.453
+(Every agent shares the same team fairness) Teamwork fairness for agent 3: 0.453
+(Every agent shares the same team fairness) Teamwork fairness for agent 0: 0.442
+(Every agent shares the same team fairness) Teamwork fairness for agent 1: 0.442
+(Every agent shares the same team fairness) Teamwork fairness for agent 2: 0.442
+(Every agent shares the same team fairness) Teamwork fairness for agent 3: 0.442
+(Every agent shares the same team fairness) Teamwork fairness for agent 0: 0.401
+(Every agent shares the same team fairness) Teamwork fairness for agent 1: 0.401
+(Every agent shares the same team fairness) Teamwork fairness for agent 2: 0.401
+(Every agent shares the same team fairness) Teamwork fairness for agent 3: 0.401
+(Every agent shares the same team fairness) Teamwork fairness for agent 0: 0.401
+(Every agent shares the same team fairness) Teamwork fairness for agent 1: 0.401
+(Every agent shares the same team fairness) Teamwork fairness for agent 2: 0.401
+(Every agent shares the same team fairness) Teamwork fairness for agent 3: 0.401
+(Every agent shares the same team fairness) Teamwork fairness for agent 0: 0.416
+(Every agent shares the same team fairness) Teamwork fairness for agent 1: 0.416
+(Every agent shares the same team fairness) Teamwork fairness for agent 2: 0.416
+(Every agent shares the same team fairness) Teamwork fairness for agent 3: 0.416
+(Every agent shares the same team fairness) Teamwork fairness for agent 0: 0.475
+(Every agent shares the same team fairness) Teamwork fairness for agent 1: 0.475
+(Every agent shares the same team fairness) Teamwork fairness for agent 2: 0.475
+(Every agent shares the same team fairness) Teamwork fairness for agent 3: 0.475
+(Every agent shares the same team fairness) Teamwork fairness for agent 0: 0.421
+(Every agent shares the same team fairness) Teamwork fairness for agent 1: 0.421
+(Every agent shares the same team fairness) Teamwork fairness for agent 2: 0.421
+(Every agent shares the same team fairness) Teamwork fairness for agent 3: 0.421
+(Every agent shares the same team fairness) Teamwork fairness for agent 0: 0.433
+(Every agent shares the same team fairness) Teamwork fairness for agent 1: 0.433
+(Every agent shares the same team fairness) Teamwork fairness for agent 2: 0.433
+(Every agent shares the same team fairness) Teamwork fairness for agent 3: 0.433
+(Every agent shares the same team fairness) Teamwork fairness for agent 0: 0.441
+(Every agent shares the same team fairness) Teamwork fairness for agent 1: 0.441
+(Every agent shares the same team fairness) Teamwork fairness for agent 2: 0.441
+(Every agent shares the same team fairness) Teamwork fairness for agent 3: 0.441
+(Every agent shares the same team fairness) Teamwork fairness for agent 0: 0.401
+(Every agent shares the same team fairness) Teamwork fairness for agent 1: 0.401
+(Every agent shares the same team fairness) Teamwork fairness for agent 2: 0.401
+(Every agent shares the same team fairness) Teamwork fairness for agent 3: 0.401
+(Every agent shares the same team fairness) Teamwork fairness for agent 0: 0.401
+(Every agent shares the same team fairness) Teamwork fairness for agent 1: 0.401
+(Every agent shares the same team fairness) Teamwork fairness for agent 2: 0.401
+(Every agent shares the same team fairness) Teamwork fairness for agent 3: 0.401
+(Every agent shares the same team fairness) Teamwork fairness for agent 0: 0.401
+(Every agent shares the same team fairness) Teamwork fairness for agent 1: 0.401
+(Every agent shares the same team fairness) Teamwork fairness for agent 2: 0.401
+(Every agent shares the same team fairness) Teamwork fairness for agent 3: 0.401
+set 4 done

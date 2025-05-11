@@ -25,7 +25,7 @@ import lio.utils.util as util
 
 
 from lio.alg import config_ipd_lio
-from lio.alg import config_room_lio_rbd
+from lio.alg import config_room_REFiNE
 from lio.alg import evaluate
 import inspect
 
@@ -205,40 +205,43 @@ def train(config):
                 agent.train_opp_model(sess, list_buffers,
                                       epsilon)
 
-        
-        # copy_list_agents = list_agents.copy()
-        # random.shuffle(copy_list_agents) # random agent finishing it task earlier
-        for idx, agent in enumerate(list_agents):
-            buf = list_buffers[agent.agent_id]
-            # compute total‐fairness F_T for this episode
-            n_agents = env.n_agents
-            n_steps  = len(buf.obs)
-            eps      = 1e-2
-            fair_ts  = []
-            F_multiplier = 12 # upper bound of environment reward and incentives
-            gamma = config.lio.gamma
-            for t in range(n_steps):
-                # R_i(t) = env‐reward + incentives from others
-                R = np.array([ buf.reward[t] + np.sum(buf.r_from_others[t][:,i])
+        # compute total‐fairness F_T for this episode
+        n_agents = env.n_agents
+        n_steps  = len(list_buffers[0].obs)
+        eps      = config.lio.eps
+        fair_ts  = []
+        F_multiplier = config.lio.Fairness_multiplier
+        gamma = config.lio.gamma
+         
+           
+        for t in range(n_steps):
+            # R_i(t) = env‐reward + incentives from others
+            # build R_i(t) for *every* agent i
+            R = np.array([ list_buffers[i].reward[t] + np.sum(list_buffers[i].r_from_others[t][:,i])
                        for i in range(n_agents) ])
-                num = R.sum()
-                den = n_agents * np.sum(R**2) + eps
-                f_t = (num * num) / den
-                # μ = np.mean(R)
-                # devs = [abs(r-μ)+eps for r in R]
-                # f_t = (np.prod([μ/d for d in devs]))**(1.0/n_agents)
-                fair_ts.append((gamma**t)*f_t)
-            # discounted-average normalization
-            sum_weights = sum(gamma**t for t in range(n_steps))
-            F_T = F_multiplier *(sum(fair_ts) / sum_weights)    
-            print(f"Policy Training Episode {idx_episode}: enlarged total fairness = {F_T:.6f}")
-            fairness_history[idx_episode] = F_T
-            # now call update with energy & fairness
-            agent.update(sess,
-                        buf,
-                        epsilon,
-                        buf.total_energy,
-                        F_T)
+            num = R.sum()
+            den = n_agents * np.sum(R**2) + eps
+            f_t = (num * num) / den
+            fair_ts.append((gamma**t)*f_t)
+            
+        # discounted-average normalization
+        sum_weights = sum(gamma**t for t in range(n_steps))
+        F_T = (sum(fair_ts) / sum_weights) 
+        BF_T = F_multiplier * F_T   
+        print(f"Policy Training Episode {idx_episode}: total fairness = {F_T:.6f}")
+        print(f"Policy Training Episode {idx_episode}: enlarged total fairness = {BF_T:.6f}")
+        fairness_history[idx_episode] = BF_T
+        
+        # now call update with energy & fairness, update every agent
+        for agent in list_agents:
+           buf = list_buffers[agent.agent_id]
+           agent.update(sess,
+                 buf,
+                 epsilon,
+                 buf.total_energy,
+                 F_T)
+
+
 
         
         
@@ -443,12 +446,11 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     if args.exp == 'er':
-        config = config_room_lio_rbd.get_config()
+        config = config_room_REFiNE.get_config()
         # For ER(4,2) experiment
         n=4 # Number of agents in the Escape Room
         m=2 # Minimum number of agents required at lever to trigger outcome
-        config.main.dir_name = 'er_REFiNE_exploitative_4_2'  # Directory for exploitative agent logs
-        # config.main.dir_name = 'er_lio_rbd_4_2' # Directory for normal agent logs
+        config.main.dir_name = 'er_REFiNE_attack_4_2'  # Directory for exploitative agent logs
         config.env.min_at_lever = m
         config.env.n_agents = n
         config.main.exp_name = 'er%d'%args.num

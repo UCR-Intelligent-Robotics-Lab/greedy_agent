@@ -1,13 +1,16 @@
-"""Trains LIO agents on Escape Room game. Attacked by EIA.
+"""Trains attacker LIO agents on Escape Room game.
 
-
+Three versions of LIO:
+1. LIO built on top of policy gradient
+2. LIO built on top of actor-critic
+3. Fully decentralized version of LIO on top of policy gradient
 """
 
 
 from __future__ import division
 from __future__ import print_function
 
-import sys, os, csv
+import sys, os
 # Add greedy_agent_v1 path
 path_to_add = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
 sys.path.insert(0, path_to_add)
@@ -30,7 +33,7 @@ import inspect
 
 from lio.env import ipd_wrapper
 from lio.env import room_symmetric
-
+from lio.alg.lio_agent_greedy import greedy, adversarial
 
 from lola.envs.prisoners_dilemma import IteratedPrisonersDilemma
 
@@ -68,26 +71,24 @@ def train(config):
         env = room_symmetric.Env(config.env)
     elif config.env.name == 'ipd':
         env = ipd_wrapper.IPD(config.env)
-   
+    
     from lio_agent import LIO
-    
-    from lio_agent_exploitative import ExploitativeLIO as LIO_E
+    from lio_eia import ExploitativeLIO as LIO_E
 
-    
     list_agents = []
 
     # First agent normal
     list_agents.append(LIO(config.lio, env.l_obs, env.l_action,config.nn, 'agent_0',config.env.r_multiplier, env.n_agents,0, 1.0))
     
-    # Second agent exploitative
+    # Second agent is exploitative
     list_agents.append(LIO_E(config.lio, env.l_obs, env.l_action,config.nn, 'agent_1',config.env.r_multiplier, env.n_agents,1, 1.0))
     
+    # all other agents are normal
     for agent_id in range(2, env.n_agents):
         list_agents.append(LIO(config.lio, env.l_obs, env.l_action,
                                config.nn, 'agent_%d' % agent_id,
                                config.env.r_multiplier, env.n_agents,
                                agent_id, 1.0))
-       
 
      
 
@@ -189,7 +190,7 @@ def train(config):
     
 
     for idx_episode in range(1, n_episodes + 1):
-        # policy training
+
         list_buffers, mission_status = run_episode(sess, env, list_agents, epsilon,
                                    prime=False)
         step += len(list_buffers[0].obs)
@@ -204,10 +205,6 @@ def train(config):
         # random.shuffle(copy_list_agents) # random agent finishing it task earlier
         for idx, agent in enumerate(list_agents):
             agent.update(sess, list_buffers[agent.agent_id], epsilon)
-
-        
-        
-        # incentive training
 
         list_buffers_new, mission_status = run_episode(sess, env, list_agents,
                                        epsilon, prime=True)
@@ -225,7 +222,6 @@ def train(config):
             else:
                 agent.update_main(sess)
 
-        
         step_train += 1
 
         if idx_episode % period == 0:
@@ -264,7 +260,7 @@ def train(config):
                 s += '\n'
             with open(os.path.join(log_path, 'log.csv'), 'a') as f:
                 f.write(s)
-
+                
         if idx_episode % save_period == 0:
             
             saver.save(sess, os.path.join(log_path, '%s.%d'%(
@@ -278,6 +274,8 @@ def train(config):
             total_energy = buf.total_energy
             env_reward = sum(buf.reward)  # Only environmental rewards
             reward_per_energy = env_reward / total_energy if total_energy > 0 else 0
+
+           
 
     saver.save(sess, os.path.join(log_path, model_name))
 
@@ -412,8 +410,8 @@ if __name__ == '__main__':
         # For ER(4,2) experiment
         n=4 # Number of agents in the Escape Room
         m=2 # Minimum number of agents required at lever to trigger outcome
-        config.main.dir_name = 'er_lio_eia_2ndex_4_2'  # Directory for exploitative agent logs
-        # config.main.dir_name = 'er_lio_4_2' # Directory for normal agent logs
+        config.main.dir_name = 'er_attack_4_2'  # Directory for exploitative agent logs
+        # config.main.dir_name = 'LIO_normal_test_ER42' # Directory for normal agent logs
         config.env.min_at_lever = m
         config.env.n_agents = n
         config.main.exp_name = 'er%d'%args.num

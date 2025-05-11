@@ -214,13 +214,13 @@ class LIO(object):
         reward = sess.run(self.reward_function, feed_dict=feed)
         reward = reward.flatten() * self.r_multiplier
         # Add tracking of incentives given
-        #self.episode_incentives_given += np.sum(reward)
+        self.episode_incentives_given += np.sum(reward)
         # print(f"Agent {self.agent_id} incentives given this episode: {self.episode_incentives_given}")
         return reward
 
-    # def reset_episode_tracking(self):
+    def reset_episode_tracking(self):
         # Add this new method to reset tracking at the start of each episode
-        # self.episode_incentives_given = 0.0
+        self.episode_incentives_given = 0.0
 
     def create_policy_gradient_op(self):
         self.r_ext = tf.placeholder(tf.float32, [None], 'r_ext')
