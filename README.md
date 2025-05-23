@@ -94,7 +94,7 @@ Everything lives under the lio/ folder, with clear subdirectories for algorithm 
 ### Repos needed:
 - Ray from the original sequential social dilemma: https://github.com/natashamjaques/ray.git
 - [LOLA baseline](https://github.com/alshedivat/lola)
-- Sequential Social Dilemma: https://github.com/UCR-Intelligent-Robotics-Lab/sequential_social_dilemma_games.git
+- [Sequential Social Dilemma](https://github.com/eugenevinitsky/sequential_social_dilemma_games)
 ### Install
 First, make sure you have cloned all repos and setup the python environment. We use miniconda to automate the packages for Nano env (Miniconda3-py312_25.1.1-2-Linux-aarch64.sh)
 ```bash
