@@ -43,7 +43,7 @@ def test_room_symmetric(n_eval, env, sess, list_agents,
     win_rate = np.zeros(env.n_agents) # dumb 
     cumulative_energy = np.zeros(env.n_agents)  # Track total energy across all episodes
     cumulative_env_rewards = np.zeros(env.n_agents)  # Track total env rewards across all episodes
-    reward_per_energy = np.zeros(env.n_agents)  # Add reward per energy tracking # This will now use only environmental rewards
+    #reward_per_energy = np.zeros(env.n_agents)  # Add reward per energy tracking # This will now use only environmental rewards
     
     win = 0 
     lose = 0
@@ -178,10 +178,10 @@ def test_room_symmetric(n_eval, env, sess, list_agents,
     steps_per_episode = total_steps / n_eval
     
     # Calculate reward per energy using final cumulative values
-    reward_per_energy = np.zeros(env.n_agents)
-    for idx in range(env.n_agents):
-        if cumulative_energy[idx] > 0:
-            reward_per_energy[idx] = cumulative_env_rewards[idx] / (cumulative_energy[idx] + 1e-8)
+    #reward_per_energy = np.zeros(env.n_agents)
+    #for idx in range(env.n_agents):
+        #if cumulative_energy[idx] > 0:
+            #reward_per_energy[idx] = cumulative_env_rewards[idx] / (cumulative_energy[idx] + 1e-8)
     
     # mean team‐fairness over all eval episodes, every agent shares the same value
     for idx in range(env.n_agents):
@@ -195,7 +195,7 @@ def test_room_symmetric(n_eval, env, sess, list_agents,
    
     return (rewards_total, rewards_env, n_move_lever, n_move_door, rewards_received,
             rewards_given, steps_per_episode, r_lever, r_start, r_door,
-            win_rate, cumulative_energy, reward_per_energy, teamwork_fairness)
+            win_rate, cumulative_energy, teamwork_fairness)
 
 
 # baseline testing function that evaluates agents without social incentives
@@ -656,26 +656,38 @@ def measure_incentive_behavior(env, sess, list_agents, log_path, episode,
 
 def test_ipd(n_eval, env, sess, list_agents):
     """Eval episodes on IPD."""
+    """IPD does not have energy costs, so we don't track energy."""
 
-    n_c = np.zeros((n_eval, env.n_agents))  # count of cooperation
-    n_d = np.zeros((n_eval, env.n_agents))  # count of defection
-    rewards_env = np.zeros((n_eval, env.n_agents))
-    rewards_given = np.zeros((n_eval, env.n_agents))
-    rewards_received = np.zeros((n_eval, env.n_agents))
-    rewards_total = np.zeros((n_eval, env.n_agents))    
-    cumulative_energy = np.zeros(env.n_agents)     # Changed to track cumulative across episodes
+    n_c = np.zeros(env.n_agents, dtype=int)  # count of cooperation over 10 evaluations
+    n_d = np.zeros(env.n_agents, dtype=int)  # count of defection over 10 evaluations
+    rewards_env      = np.zeros(env.n_agents)
+    rewards_given    = np.zeros(env.n_agents)
+    rewards_received = np.zeros(env.n_agents)
+    rewards_total    = np.zeros(env.n_agents)
+    
+  
+    #cumulative_energy = np.zeros(env.n_agents)     # Changed to track cumulative across episodes
     cumulative_env_rewards = np.zeros(env.n_agents)  # Track total env rewards
-    reward_per_energy = np.zeros(env.n_agents)
+    #reward_per_energy = np.zeros(env.n_agents)
 
     epsilon = 0
+    # for computing per‐episode discounted fairness
+    eps = 1e-2
+    gamma = list_agents[0].gamma
+    fairness_list = []
+    teamwork_fairness=np.zeros(env.n_agents) # Add this to track teamwork fairness
+
     for idx_episode in range(1, n_eval + 1):
 
         list_obs = env.reset()
         done = False
 
         # Track per-episode metrics
-        episode_energy = np.zeros(env.n_agents)
+        #episode_energy = np.zeros(env.n_agents)
         episode_env_rewards = np.zeros(env.n_agents)  # Track only environmental rewards
+        # per‐episode fairness accumulator
+        t = 0
+        fair_ts = []
 
         while not done:
             list_actions = []
@@ -683,13 +695,13 @@ def test_ipd(n_eval, env, sess, list_agents):
                 action = agent.run_actor(list_obs[idx], sess, epsilon)
                 list_actions.append(action)
                 if action == 0:
-                    n_c[idx_episode-1, idx] += 1 # Cooperation
+                    n_c[idx] += 1 # Cooperation
                 elif action == 1:
-                    n_d[idx_episode-1, idx] += 1 # Defection
+                    n_d[idx] += 1 # Defection
 
                 # Accumulate energy across all episodes
-                energy_cost = agent.calculate_energy_cost(list_obs[idx], list_actions[idx])
-                cumulative_energy[idx] += energy_cost    
+                #energy_cost = agent.calculate_energy_cost(list_obs[idx], list_actions[idx])
+                #cumulative_energy[idx] += energy_cost    
             
             
 
@@ -700,31 +712,56 @@ def test_ipd(n_eval, env, sess, list_agents):
                 else:
                     reward = np.zeros(env.n_agents)
                 reward[idx] = 0
-                rewards_received[idx_episode-1] += reward
-                rewards_given[idx_episode-1, idx] += np.sum(reward)
+                rewards_received += reward
+                rewards_given[idx] += np.sum(reward)
                 matrix_given[idx] = reward
 
             # Environment step
             list_obs_next, env_rewards, done = env.step(list_actions)
 
-            rewards_env[idx_episode-1] += env_rewards
-            rewards_total[idx_episode-1] += env_rewards
+            rewards_env  += env_rewards
 
             for idx in range(env.n_agents):
-                cumulative_env_rewards[idx] += env_rewards[idx]
-                episode_env_rewards[idx] += env_rewards[idx]
-                rewards_total[idx_episode-1, idx] += np.sum(matrix_given[:, idx])
-                rewards_total[idx_episode-1, idx] -= np.sum(matrix_given[idx, :])
+                
+                rewards_total[idx] += env_rewards[idx] + np.sum(matrix_given[:, idx])
+                # rewards_total[idx_episode-1, idx] -= np.sum(matrix_given[idx, :])
 
             list_obs = list_obs_next
 
+            # compute per‐step team‐fairness f_t 
+            R = np.zeros(env.n_agents)
+            for i in range(env.n_agents):
+                R[i] = env_rewards[i] \
+                     + matrix_given[:,i].sum() 
+            # Jain’s index: (sum R)^2 / (n * sum R^2)
+            num   = np.sum(R)
+            den   = env.n_agents * np.sum(R**2) + eps
+            f_t   = (num * num) / den
+            fair_ts.append((gamma**t) * f_t)
+            t += 1
+
+            
+
+        # record this episode’s discounted‐fairness
+        # discounted-average normalization
+        sum_weights = sum(gamma**t for t in range(len(fair_ts)))
+        F_T = sum(fair_ts) / sum_weights
+        fairness_list.append(F_T)    
+
     # Calculate reward per energy for this episode
+    #for idx in range(env.n_agents):
+        #if cumulative_energy[idx] > 0:
+            #reward_per_energy[idx] = cumulative_env_rewards[idx] / (cumulative_energy[idx] + 1e-8)
+
+    # mean team‐fairness over all eval episodes, every agent shares the same value
     for idx in range(env.n_agents):
-        if cumulative_energy[idx] > 0:
-            reward_per_energy[idx] = cumulative_env_rewards[idx] / (cumulative_energy[idx] + 1e-8)
-
+        if fairness_list[idx] > 0:
+            teamwork_fairness[idx] = float(np.mean(fairness_list))
+            print('(Every agent shares the same team fairness) Teamwork fairness for agent %d: %.3f' % (idx, teamwork_fairness[idx]))
+        else:
+            teamwork_fairness[idx] = 0
+            print('Warning: fairness is 0 for agent %d' % idx)
     
     
 
-    return (rewards_given, rewards_received, rewards_env,
-            rewards_total, cumulative_energy, reward_per_energy)
+    return (rewards_given, rewards_received, rewards_env, rewards_total, n_c, n_d, teamwork_fairness)

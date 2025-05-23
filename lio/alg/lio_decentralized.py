@@ -8,7 +8,7 @@ import tensorflow as tf
 
 
 # import lio.alg.lio_agent as lio_agent 
-from lio.alg import lio_agent
+from lio.alg import lio_agent_er
 # import lio.alg.networks as networks
 from lio.alg import networks
 
@@ -16,7 +16,7 @@ from lio.utils import util
 
 
 
-class LIO(lio_agent.LIO):
+class LIO(lio_agent_er.LIO):
 
     def __init__(self, config, l_obs, l_action, nn, agent_name,
                  r_multiplier=2, n_agents=1, agent_id=0,

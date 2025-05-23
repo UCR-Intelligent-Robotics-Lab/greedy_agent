@@ -1,9 +1,6 @@
 """Trains attacker LIO agents on Escape Room game.
 
-Three versions of LIO:
-1. LIO built on top of policy gradient
-2. LIO built on top of actor-critic
-3. Fully decentralized version of LIO on top of policy gradient
+The 2nd agent is attacked by eia, w_{i,j} (\text{lever pulling}) = 2, w_{i,j} (\text{door opening}) = 0.2, let others favor lever pulling, hate door opening.
 """
 
 
@@ -33,7 +30,7 @@ import inspect
 
 from lio.env import ipd_wrapper
 from lio.env import room_symmetric
-from lio.alg.lio_agent_greedy import greedy, adversarial
+
 
 from lola.envs.prisoners_dilemma import IteratedPrisonersDilemma
 
@@ -72,8 +69,8 @@ def train(config):
     elif config.env.name == 'ipd':
         env = ipd_wrapper.IPD(config.env)
     
-    from lio_agent import LIO
-    from lio_eia import ExploitativeLIO as LIO_E
+    from lio_agent_er import LIO
+    from lio_eia_er import ExploitativeLIO as LIO_E
 
     list_agents = []
 
@@ -166,10 +163,10 @@ def train(config):
     if config.env.name == 'er':
         list_suffix = ['reward_total', 'reward_env', 'n_lever', 'n_door',
                    'received', 'given', 'r-lever', 'r-start', 'r-door', 
-                   'win_rate', 'total_energy', 'reward_per_energy', 'teamwork_fairness']
+                   'win_rate', 'total_energy', 'teamwork_fairness']
     elif config.env.name == 'ipd':
         list_suffix = ['given', 'received', 'reward_env',
-                   'reward_total', 'total_energy', 'reward_per_energy', 'teamwork_fairness']
+                   'reward_total', 'teamwork_fairness']
     for agent_id in range(1, env.n_agents + 1):
         for suffix in list_suffix:
             list_agent_meas.append('A%d_%s' % (agent_id, suffix))
@@ -230,26 +227,26 @@ def train(config):
                
                (reward_total, rewards_env, n_move_lever, n_move_door, rewards_received,
                 rewards_given, steps_per_episode, r_lever, r_start, r_door,
-                win_rate, cumulative_energy, reward_per_energy, teamwork_fairness) = evaluate.test_room_symmetric(
+                win_rate, cumulative_energy, teamwork_fairness) = evaluate.test_room_symmetric(
                     n_eval, env, sess, list_agents, 'lio')
                
                matrix_combined = np.stack([reward_total, rewards_env, n_move_lever, n_move_door,
                              rewards_received, rewards_given,
                              r_lever, r_start, r_door, win_rate,
-                             cumulative_energy, reward_per_energy, teamwork_fairness])
+                             cumulative_energy, teamwork_fairness])
             elif config.env.name == 'ipd':
                 (rewards_given, rewards_received, rewards_env,
-                 rewards_total, cumulative_energy, reward_per_energy) = evaluate.test_ipd(
+                 rewards_total, teamwork_fairness) = evaluate.test_ipd(
                     n_eval, env, sess, list_agents)
                 matrix_combined = np.stack([rewards_given, rewards_received, rewards_env,
-                                  rewards_total, cumulative_energy, reward_per_energy])
+                                  rewards_total, teamwork_fairness])
 
             s = '%d,%d,%d' % (idx_episode, step_train, step)
             for idx in range(env.n_agents):
                 s += ','
                 if config.env.name == 'er':
                     s += ('{:.3e},{:.3e},{:.3e},{:.3e},{:.3e},'
-                          '{:.3e},{:.3e},{:.3e},{:.3e},{:.3e},{:.3e},{:.3e}, {:.3e}').format(
+                          '{:.3e},{:.3e},{:.3e},{:.3e},{:.3e},{:.3e},{:.3e}').format(
                           *matrix_combined[:, idx])
                 elif config.env.name == 'ipd':
                     s += '{:.3e},{:.3e},{:.3e},{:.3e},{:.3e},{:.3e}'.format(
@@ -270,10 +267,10 @@ def train(config):
             epsilon -= epsilon_step
 
         # Calculate Total Energy and Average Reward per Energy at the end of the episode
-        for agent_id, buf in enumerate(list_buffers):
-            total_energy = buf.total_energy
-            env_reward = sum(buf.reward)  # Only environmental rewards
-            reward_per_energy = env_reward / total_energy if total_energy > 0 else 0
+        #for agent_id, buf in enumerate(list_buffers):
+            #total_energy = buf.total_energy
+            #env_reward = sum(buf.reward)  # Only environmental rewards
+            #reward_per_energy = env_reward / total_energy if total_energy > 0 else 0
 
            
 

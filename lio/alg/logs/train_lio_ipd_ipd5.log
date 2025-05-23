@@ -1,0 +1,59 @@
+/home/yifan/anaconda3/envs/lio_zzl/lib/python3.6/site-packages/tensorflow/python/framework/dtypes.py:523: FutureWarning: Passing (type, 1) or '1type' as a synonym of type is deprecated; in a future version of numpy, it will be understood as (type, (1,)) / '(1,)type'.
+  _np_qint8 = np.dtype([("qint8", np.int8, 1)])
+/home/yifan/anaconda3/envs/lio_zzl/lib/python3.6/site-packages/tensorflow/python/framework/dtypes.py:524: FutureWarning: Passing (type, 1) or '1type' as a synonym of type is deprecated; in a future version of numpy, it will be understood as (type, (1,)) / '(1,)type'.
+  _np_quint8 = np.dtype([("quint8", np.uint8, 1)])
+/home/yifan/anaconda3/envs/lio_zzl/lib/python3.6/site-packages/tensorflow/python/framework/dtypes.py:525: FutureWarning: Passing (type, 1) or '1type' as a synonym of type is deprecated; in a future version of numpy, it will be understood as (type, (1,)) / '(1,)type'.
+  _np_qint16 = np.dtype([("qint16", np.int16, 1)])
+/home/yifan/anaconda3/envs/lio_zzl/lib/python3.6/site-packages/tensorflow/python/framework/dtypes.py:526: FutureWarning: Passing (type, 1) or '1type' as a synonym of type is deprecated; in a future version of numpy, it will be understood as (type, (1,)) / '(1,)type'.
+  _np_quint16 = np.dtype([("quint16", np.uint16, 1)])
+/home/yifan/anaconda3/envs/lio_zzl/lib/python3.6/site-packages/tensorflow/python/framework/dtypes.py:527: FutureWarning: Passing (type, 1) or '1type' as a synonym of type is deprecated; in a future version of numpy, it will be understood as (type, (1,)) / '(1,)type'.
+  _np_qint32 = np.dtype([("qint32", np.int32, 1)])
+/home/yifan/anaconda3/envs/lio_zzl/lib/python3.6/site-packages/tensorflow/python/framework/dtypes.py:532: FutureWarning: Passing (type, 1) or '1type' as a synonym of type is deprecated; in a future version of numpy, it will be understood as (type, (1,)) / '(1,)type'.
+  np_resource = np.dtype([("resource", np.ubyte, 1)])
+Couldn't import TensorFlow - disabling TensorBoard logging.
+2025-05-21 01:12:00.482939: I tensorflow/core/platform/cpu_feature_guard.cc:141] Your CPU supports instructions that this TensorFlow binary was not compiled to use: AVX2 FMA
+2025-05-21 01:12:00.496673: I tensorflow/core/common_runtime/gpu/gpu_device.cc:982] Device interconnect StreamExecutor with strength 1 edge matrix:
+2025-05-21 01:12:00.496694: I tensorflow/core/common_runtime/gpu/gpu_device.cc:988]      
+Initializing LIO agent agent_0
+Initializing LIO agent agent_1
+(Every agent shares the same team fairness) Teamwork fairness for agent 0: 0.578
+(Every agent shares the same team fairness) Teamwork fairness for agent 1: 0.578
+(Every agent shares the same team fairness) Teamwork fairness for agent 0: 0.828
+(Every agent shares the same team fairness) Teamwork fairness for agent 1: 0.828
+(Every agent shares the same team fairness) Teamwork fairness for agent 0: 0.980
+(Every agent shares the same team fairness) Teamwork fairness for agent 1: 0.980
+(Every agent shares the same team fairness) Teamwork fairness for agent 0: 0.999
+(Every agent shares the same team fairness) Teamwork fairness for agent 1: 0.999
+(Every agent shares the same team fairness) Teamwork fairness for agent 0: 0.958
+(Every agent shares the same team fairness) Teamwork fairness for agent 1: 0.958
+(Every agent shares the same team fairness) Teamwork fairness for agent 0: 0.192
+(Every agent shares the same team fairness) Teamwork fairness for agent 1: 0.192
+(Every agent shares the same team fairness) Teamwork fairness for agent 0: 0.997
+(Every agent shares the same team fairness) Teamwork fairness for agent 1: 0.997
+(Every agent shares the same team fairness) Teamwork fairness for agent 0: 0.987
+(Every agent shares the same team fairness) Teamwork fairness for agent 1: 0.987
+(Every agent shares the same team fairness) Teamwork fairness for agent 0: 0.997
+(Every agent shares the same team fairness) Teamwork fairness for agent 1: 0.997
+(Every agent shares the same team fairness) Teamwork fairness for agent 0: 0.997
+(Every agent shares the same team fairness) Teamwork fairness for agent 1: 0.997
+(Every agent shares the same team fairness) Teamwork fairness for agent 0: 0.987
+(Every agent shares the same team fairness) Teamwork fairness for agent 1: 0.987
+(Every agent shares the same team fairness) Teamwork fairness for agent 0: 0.868
+(Every agent shares the same team fairness) Teamwork fairness for agent 1: 0.868
+(Every agent shares the same team fairness) Teamwork fairness for agent 0: 0.712
+(Every agent shares the same team fairness) Teamwork fairness for agent 1: 0.712
+(Every agent shares the same team fairness) Teamwork fairness for agent 0: 0.773
+(Every agent shares the same team fairness) Teamwork fairness for agent 1: 0.773
+(Every agent shares the same team fairness) Teamwork fairness for agent 0: 0.347
+(Every agent shares the same team fairness) Teamwork fairness for agent 1: 0.347
+(Every agent shares the same team fairness) Teamwork fairness for agent 0: 0.949
+(Every agent shares the same team fairness) Teamwork fairness for agent 1: 0.949
+(Every agent shares the same team fairness) Teamwork fairness for agent 0: 0.855
+(Every agent shares the same team fairness) Teamwork fairness for agent 1: 0.855
+(Every agent shares the same team fairness) Teamwork fairness for agent 0: 0.372
+(Every agent shares the same team fairness) Teamwork fairness for agent 1: 0.372
+(Every agent shares the same team fairness) Teamwork fairness for agent 0: 0.858
+(Every agent shares the same team fairness) Teamwork fairness for agent 1: 0.858
+(Every agent shares the same team fairness) Teamwork fairness for agent 0: 0.512
+(Every agent shares the same team fairness) Teamwork fairness for agent 1: 0.512
+set 5 done

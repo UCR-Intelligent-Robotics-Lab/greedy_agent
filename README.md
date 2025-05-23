@@ -1,13 +1,31 @@
-# PIMbot (This is the tensorflow v1 for PC)
+# REFiNE (This is the tensorflow v1 for PC)
 
-Official implementations and results of IROS 2023 paper [PIMbot: Policy and Incentive Manipulation for Multi-Robot Reinforcement Learning in Social Dilemmas](https://arxiv.org/pdf/2307.15944).
+Official implementations and results of the paper [REFiNE: Reward and Energy Fairness for Robust Multi-Agent Coordination in RL-driven Robots].
 
 ## Overview
-PIMbot introduces two forms of reward function manipulation in multi-agent reinforcement learning (RL) social dilemmas:
+REFiNE is a fully self-contained TensorFlow v1 codebase on reward & energy fairness in multi-agent reinforcement learning. It implements:
 
-1.	Policy Manipulation: Adjusting the decision-making strategies of robots to influence task outcomes.
+Core algorithms:
+- LIO (Learning to Incentivize Others) for baseline comparisons
+- EIA (Exploitative Incentive Attack) to validate robustness
+- REFiNE (a novel Reward & Energy First Notably Equilibrated Incentivization)
 
-2.	Incentive Manipulation: Modifying reward structures to change robot behavior within a social dilemma.
+Environment wrappers:
+- Escape Room (ER) and Iterated Prisoner’s Dilemma (IPD) for social-dilemma tests
+
+Experiment orchestration:
+- Config‐driven training scripts (train_*.py )
+- run_experiments_er.py or run_experiments_ipd.py to launch multi-seed, parallel runs for ER or IPD experiments
+- save experiment result logs in results/er * or results/ipd * for the *th experiment on ER or IPD setting
+
+Visualization & analysis
+- Post-processing scripts for reward, fairness, and energy metrics
+- Figure generators to reproduce all paper plots
+
+Everything lives under the lio/ folder, with clear subdirectories for algorithm code (alg/) vs. env wrappers (env/), making it easy to locate, extend, or plug in your own MARL variants.
+
+
+
 
 ## Setup
 
@@ -20,29 +38,52 @@ PIMbot introduces two forms of reward function manipulation in multi-agent reinf
 - Clone this repository and run `$ pip install -e .` from the root.
 
 ## Navigation
-* `./*.ipynb` - Plot and visualization scripts.
-* `./*.py` - Plot scripts.
-* `./*.png` - Experimental results in PIMbot paper.
-* `./lio/alg/` - Implementation of LIO and PG/AC baselines
-* `./lio/env/` - Implementation of the Escape Room game and wrappers around the SSD environment.
-* `./lio/results/` - Results of training will be stored in subfolders here. Each independent training run will create a subfolder that contains the final Tensorflow model, and reward log files. For example, 5 parallel independent training runs would create `results/cleanup/10x10_lio_0`,...,`results/cleanup/10x10_lio_4` (depending on configurable strings in config files).
-* `./lio/utils/` - Utility methods.
+├── README.md ← this file
+├── environment.yml ← conda env spec (TensorFlow 1, Gym, etc.)
+├── requirements.txt ← pip dependencies
+├── run.sh ← helper script to launch experiments
+│
+├── lio/
+│ ├── alg/ ← all agent/algorithm implementations
+│ │ ├── config_room_lio.py ← LIO on Escape Room (ER)
+│ │ ├── config_room_REFINE.py ← REFiNE on ER
+│ │ ├── config_ipd_lio.py ← LIO on Iterated Prisoner’s Dilemma (IPD)
+│ │ ├── config_ipd_REFINE.py ← REFiNE on Iterated Prisoner’s Dilemma (IPD)
+│ │ ├── train_.py ← training scripts (e.g. train_REFINE_eia_er.py)
+│ │ ├── run_trained_.py ← evaluation scripts for trained models
+│ │ └── run_experiments_.py ← unified entry point for reproducible runs on ER or IPD
+│ │
+│ └── env/ ← environment wrappers and game definitions
+│ ├── room_agent.py
+│ ├── room_symmetric_*.py
+│ └── ipd_wrapper.py
+│
+└── LICENSE ← MIT license
+
 
 ## Examples
 
-### Train LIO on Escape Room
+### Train REFiNE on Escape Room
 
-* Set config values in `alg/config_room_lio.py`
+* Set config values in `alg/config_room_REFiNE.py`
 * `cd` into the `alg` folder
-* Execute training script `$ python train_multiprocess.py lio er`. Default settings conduct 5 parallel runs with different seeds.
-* For a single run, execute `$ python train_lio.py er`.
+* Execute training script `$ python train_REFiNE_eia_er.py er i`. Default settings saves results in results/er i, meaning the ith experiment.
 
-### Train LIO on Cleanup
+### Train REFiNE on Iterated Prisoner’s Dilemma
 
-* Set config values in `alg/config_ssd_lio.py`
+* Set config values in `alg/config_ipd_REFiNE.py`
 * `cd` into the `alg` folder
-* Execute training script `$ python train_multiprocess.py lio ssd`.
-* For a single run, execute `$ python train_ssd.py`.
+* Execute training script `$ python train_REFiNE_eia_ipd.py ipd i`. Default settings saves results in results/ipd i, meaning the ith experiment.
+
+### Run trained REFiNE model on ER (4,2) that is gained in experiment er i
+
+
+* `cd` into the `alg` folder
+* Execute training script `$ python run_trained_REFiNE_eia_er.py`. 
+
+### Evaluation & Visualization
+
+* Plotting scripts are available in plot_ER42_REFiNE.py for ER (4,2) case
 
 ## Setup and run on Jetson Nano (2025)
 ### Pre-req packages
@@ -54,36 +95,23 @@ PIMbot introduces two forms of reward function manipulation in multi-agent reinf
 - ray==2.2.0
 ### Repos needed:
 - Ray from the original sequential social dilemma: https://github.com/natashamjaques/ray.git
-- LOLA from our version: https://github.com/UCR-Intelligent-Robotics-Lab/lola
-- Sequential Social Dilemma from our version: https://github.com/UCR-Intelligent-Robotics-Lab/sequential_social_dilemma_games.git
+- [LOLA baseline](https://github.com/alshedivat/lola)
+- Sequential Social Dilemma: https://github.com/UCR-Intelligent-Robotics-Lab/sequential_social_dilemma_games.git
 ### Install
 First, make sure you have cloned all repos and setup the python environment. We use miniconda to automate the packages for Nano env (Miniconda3-py312_25.1.1-2-Linux-aarch64.sh)
 ```bash
 conda env create -f environment_nano.yml
 ```
-Then, follow the steps in the [Sequential Social Dilemma](https://github.com/UCR-Intelligent-Robotics-Lab/sequential_social_dilemma_games.git) to setup. The ray repo is the one you have already cloned in the repos needed part.
+Then, follow the steps in the [Sequential Social Dilemma](https://github.com/eugenevinitsky/sequential_social_dilemma_games) to setup. The ray repo is the one you have already cloned in the repos needed part.
 
-Next, Make sure you followed our [LOLA](https://github.com/UCR-Intelligent-Robotics-Lab/lola) setup in the cloned repo
+Next, Make sure you followed [LOLA baseline](https://github.com/alshedivat/lola) setup in the cloned repo
 
-Finally, check if you can run the train_lio.py er for the escape room case using the code below (er means escape room, 4 means 4 agents):
+Finally, check if you can run the train_lio_er.py er for the escape room case using the code below (er means escape room, 4 means 4 agents):
 ```bash
-LD_PRELOAD=/lib/aarch64-linux-gnu/libGLdispatch.so python train_lio.py er 4
+LD_PRELOAD=/lib/aarch64-linux-gnu/libGLdispatch.so python train_lio_er.py er 4
 ```
 
-## Citation
 
-Please cite our paper if you are inspired by PIMbot in your work:
-
-<pre>
-@inproceedings{nikkhoo2023pimbot,
-  title={Pimbot: Policy and incentive manipulation for multi-robot reinforcement learning in social dilemmas},
-  author={Nikkhoo, Shahab and Li, Zexin and Samanta, Aritra and Li, Yufei and Liu, Cong},
-  booktitle={2023 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS)},
-  pages={5630--5636},
-  year={2023},
-  organization={IEEE}
-}
-</pre>
 
 ## Acknowledgement
 
