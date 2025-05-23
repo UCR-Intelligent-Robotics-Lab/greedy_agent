@@ -37,28 +37,27 @@ Everything lives under the lio/ folder, with clear subdirectories for algorithm 
 - Clone and `pip install` [LOLA](https://github.com/alshedivat/lola) if you wish to run this baseline.
 - Clone this repository and run `$ pip install -e .` from the root.
 
-## Navigation
-├── README.md ← this file
-├── environment.yml ← conda env spec (TensorFlow 1, Gym, etc.)
-├── requirements.txt ← pip dependencies
-├── run.sh ← helper script to launch experiments
-│
-├── lio/
-│ ├── alg/ ← all agent/algorithm implementations
-│ │ ├── config_room_lio.py ← LIO on Escape Room (ER)
-│ │ ├── config_room_REFINE.py ← REFiNE on ER
-│ │ ├── config_ipd_lio.py ← LIO on Iterated Prisoner’s Dilemma (IPD)
-│ │ ├── config_ipd_REFINE.py ← REFiNE on Iterated Prisoner’s Dilemma (IPD)
-│ │ ├── train_.py ← training scripts (e.g. train_REFINE_eia_er.py)
-│ │ ├── run_trained_.py ← evaluation scripts for trained models
-│ │ └── run_experiments_.py ← unified entry point for reproducible runs on ER or IPD
-│ │
-│ └── env/ ← environment wrappers and game definitions
-│ ├── room_agent.py
-│ ├── room_symmetric_*.py
-│ └── ipd_wrapper.py
-│
-└── LICENSE ← MIT license
+```markdown
+- **Navigation**
+  - `README.md` ← this file  
+  - `environment.yml` ← conda env spec (TensorFlow 1, Gym, etc.)  
+  - `requirements.txt` ← pip dependencies  
+  - `run.sh` ← helper script to launch experiments  
+  - **lio/**
+    - **alg/**
+      - `config_room_lio.py` ← LIO on Escape Room (ER)  
+      - `config_room_REFINE.py` ← REFiNE on ER  
+      -  config_ipd_lio.py ← LIO on Iterated Prisoner’s Dilemma (IPD)
+      -  config_ipd_REFINE.py ← REFiNE on Iterated Prisoner’s Dilemma (IPD)
+      -  train_.py ← training scripts (e.g. train_REFINE_eia_er.py)
+      -  run_trained_.py ← evaluation scripts for trained models
+      -  run_experiments_.py ← unified entry point for reproducible runs on ER or IPD
+    - **env/**
+      - `room_agent.py`  
+      - `room_symmetric_*.py`  
+      - `ipd_wrapper.py`  
+  - `LICENSE` ← MIT license  
+
 
 
 ## Examples
