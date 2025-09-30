@@ -65,6 +65,7 @@ def run_episode(sess, env, list_agents, epsilon, prime=False):
                 reward = sess.run(agent.reward_function, feed_dict=feed).flatten() * agent.r_multiplier
             else:
                 reward = np.zeros(env.n_agents)
+            reward = np.nan_to_num(reward, nan=0.0, posinf=0.0, neginf=0.0)
             reward[idx] = 0
             total_reward_given_to_each_agent[idx] += reward
             list_rewards[idx] = np.delete(reward, idx)
@@ -210,37 +211,44 @@ def train(config, admo_cfg: AdaptiveMOConfig, adversary_idx: int = 0):
 
         step_train += 1
 
-        print("episode",idx_episode)
-
         if idx_episode % period == 0:
             (rewards_given, rewards_received, rewards_env,
              rewards_total, cumulative_energy, reward_per_energy) = evaluate.test_ipd(
                 n_eval, env, sess, list_agents)
 
-            rewards_given_mean = rewards_given.mean(axis=0)
-            rewards_received_mean = rewards_received.mean(axis=0)
-            rewards_env_mean = rewards_env.mean(axis=0)
-            rewards_total_mean = rewards_total.mean(axis=0)
+            rewards_given_mean = np.nanmean(rewards_given, axis=0)
+            rewards_received_mean = np.nanmean(rewards_received, axis=0)
+            rewards_env_mean = np.nanmean(rewards_env, axis=0)
+            rewards_total_mean = np.nanmean(rewards_total, axis=0)
+
+            cumulative_energy = np.nan_to_num(cumulative_energy, nan=0.0, posinf=0.0, neginf=0.0)
+            reward_per_energy = np.nan_to_num(reward_per_energy, nan=0.0, posinf=0.0, neginf=0.0)
 
             log_values = [idx_episode, step_train, step]
             for idx in range(env.n_agents):
                 log_values.extend([
-                    f"{rewards_given_mean[idx]:.3e}",
-                    f"{rewards_received_mean[idx]:.3e}",
-                    f"{rewards_env_mean[idx]:.3e}",
-                    f"{rewards_total_mean[idx]:.3e}",
+                    f"{np.nan_to_num(rewards_given_mean[idx], nan=0.0):.3e}",
+                    f"{np.nan_to_num(rewards_received_mean[idx], nan=0.0):.3e}",
+                    f"{np.nan_to_num(rewards_env_mean[idx], nan=0.0):.3e}",
+                    f"{np.nan_to_num(rewards_total_mean[idx], nan=0.0):.3e}",
                     f"{cumulative_energy[idx]:.3e}",
                     f"{reward_per_energy[idx]:.3e}"
                 ])
 
+            alpha_safe = np.nan_to_num(controller.alpha, nan=0.5)
+            if alpha_safe.sum() == 0:
+                alpha_safe = np.array([0.5, 0.5], dtype=np.float32)
+            else:
+                alpha_safe = alpha_safe / alpha_safe.sum()
+
             log_values.extend([
-                f"{controller.alpha[0]:.4f}",
-                f"{controller.alpha[1]:.4f}",
-                f"{controller.signals['returns_gap']:.4f}",
-                f"{controller.signals['team_welfare']:.4f}",
-                f"{controller.signals['inc_cost']:.4f}",
-                f"{controller.ema_success.value:.4f}",
-                f"{controller.ema_variance.value:.4f}"
+                f"{alpha_safe[0]:.4f}",
+                f"{alpha_safe[1]:.4f}",
+                f"{np.nan_to_num(controller.signals.get('returns_gap', 0.0), nan=0.0):.4f}",
+                f"{np.nan_to_num(controller.signals.get('team_welfare', 0.0), nan=0.0):.4f}",
+                f"{np.nan_to_num(controller.signals.get('inc_cost', 0.0), nan=0.0):.4f}",
+                f"{np.nan_to_num(controller.ema_success.value, nan=0.0):.4f}",
+                f"{np.nan_to_num(controller.ema_variance.value, nan=0.0):.4f}"
             ])
 
             with open(os.path.join(log_path, 'log.csv'), 'a') as f:
@@ -273,8 +281,8 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     config = config_ipd_lio.get_config()
-    config.main.dir_name = 'ipd_lio_admo%d' % args.n_agents
-    config.main.exp_name = 'ipd_admo%d' % args.num
+    config.main.dir_name = 'ipd_lio_admo'
+    config.main.exp_name = 'ipd_admo_%d_trail_%d' % (args.n_agents, args.num)
     config.env.n_agents = args.n_agents
 
     mode_sign = +1 if args.mode == 'adversarial' else -1
