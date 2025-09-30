@@ -641,22 +641,23 @@ def test_ipd(n_eval, env, sess, list_agents):
             list_actions = []
             for idx, agent in enumerate(list_agents):
                 action = agent.run_actor(list_obs[idx], sess, epsilon)
-                list_actions.append(action)
-                if action == 0:
+                safe_action = int(action) % env.l_action
+                list_actions.append(safe_action)
+                if safe_action == 0:
                     n_c[idx_episode-1, idx] += 1 # Cooperation
-                elif action == 1:
+                elif safe_action == 1:
                     n_d[idx_episode-1, idx] += 1 # Defection
 
-                # Accumulate energy across all episodes
-                energy_cost = agent.calculate_energy_cost(list_obs[idx], list_actions[idx])
-                cumulative_energy[idx] += energy_cost    
-            
-            
+                energy_cost = agent.calculate_energy_cost(list_obs[idx], safe_action)
+                cumulative_energy[idx] += energy_cost
+
+
 
             matrix_given = np.zeros((env.n_agents, env.n_agents))
+            safe_actions = list_actions
             for idx, agent in enumerate(list_agents):
                 if agent.can_give:
-                    reward = agent.give_reward(list_obs[idx], list_actions, sess)
+                    reward = agent.give_reward(list_obs[idx], safe_actions, sess)
                 else:
                     reward = np.zeros(env.n_agents)
                 reward[idx] = 0
@@ -665,7 +666,7 @@ def test_ipd(n_eval, env, sess, list_agents):
                 matrix_given[idx] = reward
 
             # Environment step
-            list_obs_next, env_rewards, done = env.step(list_actions)
+            list_obs_next, env_rewards, done = env.step(safe_actions)
 
             rewards_env[idx_episode-1] += env_rewards
             rewards_total[idx_episode-1] += env_rewards
