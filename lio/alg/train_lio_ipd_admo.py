@@ -266,12 +266,16 @@ if __name__ == '__main__':
                         help='Enable automatic mode switching')
     parser.add_argument('--budget', type=float, default=float('inf'),
                         help='Incentive budget per episode')
+    
+    parser.add_argument('--n_agents', type=int, default=2,
+                        help='Number of agents in the IPD')
 
     args = parser.parse_args()
 
     config = config_ipd_lio.get_config()
-    config.main.dir_name = 'ipd_lio_admo'
+    config.main.dir_name = 'ipd_lio_admo%d' % args.n_agents
     config.main.exp_name = 'ipd_admo%d' % args.num
+    config.env.n_agents = args.n_agents
 
     mode_sign = +1 if args.mode == 'adversarial' else -1
     admo_cfg = AdaptiveMOConfig(mode=mode_sign,

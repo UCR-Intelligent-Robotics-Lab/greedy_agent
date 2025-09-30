@@ -511,11 +511,18 @@ if __name__ == '__main__':
     parser.add_argument('--budget', type=float, default=float('inf'),
                         help='Incentive budget per episode')
 
+    parser.add_argument('--min_at_lever', type=int, default=2,
+                        help='Minimum number of agents required at lever to trigger outcome')
+    parser.add_argument('--n_agents', type=int, default=4,
+                        help='Number of agents in the Escape Room')
+
     args = parser.parse_args()
 
     config = config_room_lio.get_config()
-    config.main.dir_name = 'er_lio_admo'
+    config.main.dir_name = 'er_lio_admo%d_%d' % (args.min_at_lever, args.n_agents)
     config.main.exp_name = 'er_admo%d' % args.num
+    config.env.min_at_lever = args.min_at_lever
+    config.env.n_agents = args.n_agents
 
     mode_sign = +1 if args.mode == 'adversarial' else -1
     admo_cfg = AdaptiveMOConfig(mode=mode_sign,
