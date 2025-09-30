@@ -67,7 +67,8 @@ Next, Make sure you followed our [LOLA](https://github.com/UCR-Intelligent-Robot
 
 Finally, check if you can run the train_lio.py er for the escape room case using the code below (er means escape room, 4 means 4 agents):
 ```bash
-LD_PRELOAD=/lib/aarch64-linux-gnu/libGLdispatch.so python train_lio.py er 4
+LD_PRELOAD=/lib/aarch64-linux-gnu/libGLdispatch.so python train_lio_er.py 4
+LD_PRELOAD=/lib/aarch64-linux-gnu/libGLdispatch.so python train_lio_ipd.py 4
 ```
 
 ## Citation
