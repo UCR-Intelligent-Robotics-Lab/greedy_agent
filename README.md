@@ -7,7 +7,7 @@ REFiNE is a fully self-contained TensorFlow v1 codebase on reward & energy fairn
 
 Core algorithms:
 - LIO (Learning to Incentivize Others) for baseline comparisons
-- EIA (Exploitative Incentive Attack) to validate robustness
+- EIA (Exogenous Incentive Adjustment) to validate robustness
 - REFiNE (a novel Reward & Energy First Notably Equilibrated Incentivization)
 
 Environment wrappers:
