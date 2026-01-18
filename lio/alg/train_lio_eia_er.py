@@ -407,7 +407,7 @@ if __name__ == '__main__':
         # For ER(4,2) experiment
         n=4 # Number of agents in the Escape Room
         m=2 # Minimum number of agents required at lever to trigger outcome
-        config.main.dir_name = 'er_attack_4_2'  # Directory for exploitative agent logs
+        config.main.dir_name = 'er_reverse_attack_4_2'  # Directory for reverse exploitative agent logs (0.67, 1.5)
         # config.main.dir_name = 'LIO_normal_test_ER42' # Directory for normal agent logs
         config.env.min_at_lever = m
         config.env.n_agents = n

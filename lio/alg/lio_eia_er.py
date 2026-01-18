@@ -51,7 +51,7 @@ class ExploitativeLIO(object):
 
         self.create_networks()
         self.policy_new = PolicyNew
-        print(f"Initializing LIO exploitative agent {self.agent_name} with energy_param: {energy_param}")
+        print(f"Initializing LIO reverse exploitative agent {self.agent_name} with weight pair (0.67, 1.5)")
 
 
     def get_num_at_lever(self, state):
@@ -230,12 +230,14 @@ class ExploitativeLIO(object):
         # - High rewards for others doing work (lever pulling)
         # - Low rewards for door actions
         # - Ignore own position
+
+        # test different eia weights
         for i, action in enumerate(action_all):
             if i != self.agent_id:
                 if action == 0:  # Lever pulling
-                    reward[i] = 2.0 * reward[i]  # Amplify rewards for work
+                    reward[i] = 0.67 * reward[i]  # Amplify rewards for work
                 elif action == 2:  # Door
-                    reward[i] = 0.2 * reward[i]  # Minimize rewards for competing action
+                    reward[i] = 1.5 * reward[i]  # Minimize rewards for competing action
         
         reward = reward.flatten() * self.r_multiplier 
      
