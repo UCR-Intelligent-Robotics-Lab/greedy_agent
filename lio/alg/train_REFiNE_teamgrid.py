@@ -15,6 +15,13 @@ import tensorflow as tf
 path_to_add = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
 sys.path.insert(0, path_to_add)
 
+# Fixed experiment settings (ER-style CLI)
+TOTAL_EPISODES = 25000
+EVAL_INTERVAL = 500
+EVAL_EPISODES = 10
+SEED = 1
+ENV_TAG = 'teamgrid_v0'
+
 from lio.alg import config_room_REFiNE
 from lio.env import teamgrid_switch_env
 from lio.alg.REFiNE_teamgrid import REFiNE
@@ -78,6 +85,71 @@ def compute_episode_metrics(list_buffers, n_agents, F_T):
     return matrix
 
 
+def _select_greedy_action(agent, obs, sess, prime=False):
+    feed = {agent.obs: np.array([obs]), agent.epsilon: 0.0}
+    if prime:
+        probs = sess.run(agent.probs_prime, feed_dict=feed)[0]
+    else:
+        probs = sess.run(agent.probs, feed_dict=feed)[0]
+    return int(np.argmax(probs))
+
+
+def _extract_success(env, info, done):
+    env_unwrapped = getattr(env._env, 'unwrapped', env._env)
+    goals = getattr(env_unwrapped, 'goals', None)
+    if goals is not None:
+        return len(goals) == 0
+    if isinstance(info, dict):
+        for key in ('success', 'is_success', 'goal_reached', 'episode_success'):
+            if key in info:
+                return bool(info[key])
+        if info.get('TimeLimit.truncated'):
+            return False
+        if 'terminated' in info:
+            return bool(info['terminated'])
+        if 'truncated' in info:
+            return False if info['truncated'] else bool(done)
+    return bool(done)
+
+
+def run_eval_episode(sess, env, list_agents, eval_seed=None,
+                     train_ep=None, test_ep=None):
+    if eval_seed is not None:
+        try:
+            env_unwrapped = getattr(env._env, 'unwrapped', env._env)
+            if hasattr(env_unwrapped, 'seed'):
+                env_unwrapped.seed(eval_seed)
+            elif hasattr(env._env, 'seed'):
+                env._env.seed(eval_seed)
+            else:
+                env.seed(eval_seed)
+        except Exception:
+            pass
+    if hasattr(env, 'set_episode_context'):
+        env.set_episode_context('TEST', train_ep=train_ep, test_ep=test_ep)
+    list_obs = env.reset()
+    done = False
+    step_count = 0
+
+    while not done:
+        list_actions = list(range(len(list_agents)))
+        for agent in list_agents:
+            action = _select_greedy_action(agent, list_obs[agent.agent_id], sess,
+                                           prime=False)
+            list_actions[agent.agent_id] = action
+
+        list_obs_next, env_rewards, done, info = env.step(list_actions)
+        step_count += 1
+        list_obs = list_obs_next
+
+    if hasattr(env, 'get_episode_event_timesteps'):
+        switch_step, goal_step = env.get_episode_event_timesteps()
+    else:
+        switch_step, goal_step = -1, -1
+    success = goal_step >= 0
+    return step_count, success, switch_step, goal_step
+
+
 def train(config, env, log_path):
     seed = config.main.seed
     np.random.seed(seed)
@@ -93,6 +165,7 @@ def train(config, env, log_path):
         json.dump(config, f, indent=4, sort_keys=True)
 
     n_episodes = int(config.alg.n_episodes)
+    n_eval = int(config.alg.n_eval)
     period = config.alg.period
 
     epsilon = config.lio.epsilon_start
@@ -150,6 +223,12 @@ def train(config, env, log_path):
 
     header = 'episode,step_train,step,'
     header += ','.join(list_agent_meas)
+    header += ',' + ','.join([
+        'test_success_rate',
+        'test_mean_timesteps_to_finish',
+        'test_switch_toggle_timestep',
+        'test_goal_reach_timestep',
+    ])
     header += '\n'
     with open(os.path.join(log_path, 'log.csv'), 'w') as f:
         f.write(header)
@@ -158,6 +237,8 @@ def train(config, env, log_path):
     step_train = 0
 
     for idx_episode in range(1, n_episodes + 1):
+        if hasattr(env, 'set_episode_context'):
+            env.set_episode_context('TRAIN', train_ep=idx_episode, test_ep=None)
         list_buffers, _ = run_episode(sess, env, list_agents, epsilon,
                                       prime=False)
         step += len(list_buffers[0].obs)
@@ -175,6 +256,8 @@ def train(config, env, log_path):
             buf = list_buffers[agent.agent_id]
             agent.update(sess, buf, epsilon, buf.total_energy, F_T)
 
+        if hasattr(env, 'set_episode_context'):
+            env.set_episode_context('TRAIN', train_ep=idx_episode, test_ep=None)
         list_buffers_new, _ = run_episode(sess, env, list_agents,
                                           epsilon, prime=True)
         step += len(list_buffers_new[0].obs)
@@ -195,10 +278,36 @@ def train(config, env, log_path):
         if idx_episode % period == 0:
             matrix_combined = compute_episode_metrics(
                 list_buffers, env.n_agents, F_T)
+
+            eval_steps = []
+            eval_success = []
+            eval_switch_steps = []
+            eval_goal_steps = []
+            for eval_idx in range(n_eval):
+                eval_seed = seed + 10000 + (idx_episode * 100) + eval_idx
+                (steps_ep, success_ep,
+                 switch_step, goal_step) = run_eval_episode(
+                    sess, env, list_agents, eval_seed=eval_seed,
+                    train_ep=idx_episode, test_ep=eval_idx + 1)
+                eval_steps.append(steps_ep)
+                eval_success.append(success_ep)
+                if success_ep:
+                    if switch_step >= 0:
+                        eval_switch_steps.append(switch_step)
+                    if goal_step >= 0:
+                        eval_goal_steps.append(goal_step)
+            success_rate = float(np.mean(eval_success))
+            mean_timesteps = float(np.mean(eval_steps))
+            # Mean switch/goal timesteps over successful episodes only.
+            mean_switch_step = float(np.mean(eval_switch_steps)) if eval_switch_steps else -1.0
+            mean_goal_step = float(np.mean(eval_goal_steps)) if eval_goal_steps else -1.0
+
             s = '%d,%d,%d' % (idx_episode, step_train, step)
             for idx in range(env.n_agents):
                 s += ',{:.3e},{:.3e},{:.3e},{:.3e}'.format(
                     *matrix_combined[:, idx])
+            s += ',{:.3f},{:.3f}'.format(success_rate, mean_timesteps)
+            s += ',{:.3f},{:.3f}'.format(mean_switch_step, mean_goal_step)
             s += '\n'
             with open(os.path.join(log_path, 'log.csv'), 'a') as f:
                 f.write(s)
@@ -305,35 +414,41 @@ class Buffer(object):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--episodes', type=int, default=100)
-    parser.add_argument('--seed', type=int, default=1)
-    parser.add_argument('--logdir', type=str, default=None)
-    parser.add_argument('--period', type=int, default=10)
+    parser = argparse.ArgumentParser(add_help=False)
+    parser.add_argument('exp_name', nargs='?')
     parser.add_argument('--dry_run', type=int, default=0)
     parser.add_argument('--dry_steps', type=int, default=5)
-    args = parser.parse_args()
+    args, _ = parser.parse_known_args()
+
+    if not args.exp_name:
+        print("Usage: python train_REFiNE_teamgrid.py <exp_name>")
+        sys.exit(1)
+
+    exp_name = args.exp_name
+    rel_outdir = os.path.join('lio', 'results', exp_name, ENV_TAG)
+    outdir = os.path.join(path_to_add, rel_outdir)
+    print(f"[RUN] exp={exp_name} episodes={TOTAL_EPISODES} seed={SEED} outdir={rel_outdir}")
 
     config = config_room_REFiNE.get_config()
     config.env.name = 'teamgrid'
     config.env.n_agents = 2
     config.env.action_dim = 4
     config.env.obs_dim = 147
-    config.main.seed = args.seed
-    config.alg.n_episodes = args.episodes
-    config.alg.period = args.period
-    config.main.exp_name = 'teamgrid_switch'
-    config.main.dir_name = 'refine_seed%d' % args.seed
+    config.main.seed = SEED
+    config.alg.n_episodes = TOTAL_EPISODES
+    config.alg.n_eval = EVAL_EPISODES
+    config.alg.period = EVAL_INTERVAL
+    config.main.save_period = EVAL_INTERVAL
+    config.main.exp_name = exp_name
+    config.main.dir_name = ENV_TAG
+    config.env.size = 8
 
     env = teamgrid_switch_env.Env(config.env)
     config.env.n_agents = env.n_agents
     config.env.action_dim = env.l_action
     config.env.obs_dim = env.l_obs
 
-    if args.logdir is None:
-        args.logdir = os.path.join('lio', 'results', 'teamgrid_switch',
-                                   'refine_seed%d' % args.seed)
-    log_path = args.logdir
+    log_path = outdir
 
     if args.dry_run:
         dry_run_env(env, args.dry_steps)
