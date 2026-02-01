@@ -17,8 +17,8 @@ sys.path.insert(0, path_to_add)
 
 # Fixed experiment settings (ER-style CLI)
 TOTAL_EPISODES = 25000
-EVAL_INTERVAL = 500
-EVAL_EPISODES = 10
+EVAL_INTERVAL = 2500
+EVAL_EPISODES = 100
 SEED = 1
 ENV_TAG = 'teamgrid_v0'
 
@@ -438,7 +438,7 @@ if __name__ == '__main__':
     config.alg.n_episodes = TOTAL_EPISODES
     config.alg.n_eval = EVAL_EPISODES
     config.alg.period = EVAL_INTERVAL
-    config.main.save_period = EVAL_INTERVAL
+    # Keep ER-style checkpoint cadence (config default).
     config.main.exp_name = exp_name
     config.main.dir_name = ENV_TAG
     config.env.size = 8
