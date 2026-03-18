@@ -689,3 +689,57 @@ def test_ipd(n_eval, env, sess, list_agents):
 
     return (rewards_given, rewards_received, rewards_env,
             rewards_total, cumulative_energy, reward_per_energy)
+
+def test_staghunt(n_eval, env, sess, list_agents):
+    import numpy as np
+    rewards_env = np.zeros((n_eval, env.n_agents))
+    rewards_given = np.zeros((n_eval, env.n_agents))
+    rewards_received = np.zeros((n_eval, env.n_agents))
+    rewards_total = np.zeros((n_eval, env.n_agents))    
+    cumulative_energy = np.zeros(env.n_agents)
+    cumulative_env_rewards = np.zeros(env.n_agents)
+    reward_per_energy = np.zeros(env.n_agents)
+
+    epsilon = 0
+    for idx_episode in range(1, n_eval + 1):
+        list_obs = env.reset()
+        done = False
+        
+        while not done:
+            list_actions = []
+            for idx, agent in enumerate(list_agents):
+                action = agent.run_actor(list_obs[idx], sess, epsilon)
+                safe_action = int(action) % env.l_action
+                list_actions.append(safe_action)
+
+                energy_cost = agent.calculate_energy_cost(list_obs[idx], safe_action)
+                cumulative_energy[idx] += energy_cost
+
+            matrix_given = np.zeros((env.n_agents, env.n_agents))
+            for idx, agent in enumerate(list_agents):
+                if agent.can_give:
+                    reward = agent.give_reward(list_obs[idx], list_actions, sess)
+                else:
+                    reward = np.zeros(env.n_agents)
+                reward[idx] = 0
+                rewards_received[idx_episode-1] += reward
+                rewards_given[idx_episode-1, idx] += np.sum(reward)
+                matrix_given[idx] = reward
+
+            list_obs_next, env_rewards, done = env.step(list_actions)
+
+            rewards_env[idx_episode-1] += env_rewards
+            rewards_total[idx_episode-1] += env_rewards
+
+            for idx in range(env.n_agents):
+                cumulative_env_rewards[idx] += env_rewards[idx]
+                rewards_total[idx_episode-1, idx] += np.sum(matrix_given[:, idx])
+                rewards_total[idx_episode-1, idx] -= np.sum(matrix_given[idx, :])
+
+            list_obs = list_obs_next
+
+    for idx in range(env.n_agents):
+        if cumulative_energy[idx] > 0:
+            reward_per_energy[idx] = cumulative_env_rewards[idx] / (cumulative_energy[idx] + 1e-8)
+
+    return rewards_given, rewards_received, rewards_env, rewards_total, cumulative_energy, reward_per_energy
