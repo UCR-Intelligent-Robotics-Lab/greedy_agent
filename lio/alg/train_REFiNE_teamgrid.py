@@ -9,7 +9,8 @@ import argparse
 import random
 
 import numpy as np
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
+tf.disable_eager_execution()
 
 # Add greedy_agent_v1 path
 path_to_add = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))

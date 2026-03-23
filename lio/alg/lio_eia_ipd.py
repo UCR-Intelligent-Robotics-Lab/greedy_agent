@@ -1,8 +1,8 @@
 """LIO with policy gradient for policy optimization."""
 """2nd agent being exploitative, pushing other agents to defect more by incentives."""
 import numpy as np
-import tensorflow as tf
-
+import tensorflow.compat.v1 as tf
+tf.disable_eager_execution()
 
 # import lio.alg.networks as networks
 from lio.alg import networks

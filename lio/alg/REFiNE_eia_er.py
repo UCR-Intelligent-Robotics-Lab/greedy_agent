@@ -2,8 +2,8 @@
 """REFiNE add the real time fairness term, and consider energy consumption."""
 """2nd agent being exploitative, pushing other agents to work more"""
 import numpy as np
-import tensorflow as tf
-
+import tensorflow.compat.v1 as tf
+tf.disable_eager_execution()
 
 # import lio.alg.networks as networks
 from lio.alg import networks
@@ -53,7 +53,7 @@ class REFiNEExploitative(object):
 
         self.create_networks()
         self.policy_new = PolicyNew
-        print(f"Initializing REFiNE uniform exploitative agent {self.agent_name} with weight pair (1.5, 1.5)")
+        print(f"Initializing REFiNE exploitative agent {self.agent_name} with weight pair (2.0, 0.2)")
 
 
     def get_num_at_lever(self, state):
@@ -234,9 +234,9 @@ class REFiNEExploitative(object):
         for i, action in enumerate(action_all):
             if i != self.agent_id:
                 if action == 0:  # Lever pulling
-                    reward[i] = 1.5 * reward[i]  # Amplify rewards for work
+                    reward[i] = 2.0 * reward[i]  # Amplify rewards for work
                 elif action == 2:  # Door
-                    reward[i] = 1.5 * reward[i]  # Minimize rewards for competing action
+                    reward[i] = 0.2 * reward[i]  # Minimize rewards for competing action
         reward = reward.flatten() * self.r_multiplier
 
         return reward

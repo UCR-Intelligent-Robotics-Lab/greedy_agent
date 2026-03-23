@@ -4,7 +4,8 @@ from scipy import stats
 import os
 import time
 import numpy as np
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
+tf.disable_eager_execution()
 import random
 from lio.alg import scripted_agents
 

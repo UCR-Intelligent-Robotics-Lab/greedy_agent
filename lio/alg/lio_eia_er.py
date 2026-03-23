@@ -1,8 +1,8 @@
 """LIO with policy gradient for policy optimization."""
 """2nd agent being exploitative, pushing other agents to work more by incentives."""
 import numpy as np
-import tensorflow as tf
-
+import tensorflow.compat.v1 as tf
+tf.disable_eager_execution()
 
 # import lio.alg.networks as networks
 from lio.alg import networks
@@ -51,7 +51,7 @@ class ExploitativeLIO(object):
 
         self.create_networks()
         self.policy_new = PolicyNew
-        print(f"Initializing LIO reverse exploitative agent {self.agent_name} with weight pair (0.67, 1.5)")
+        print(f"Initializing LIO exploitative agent {self.agent_name} with weight pair (2.0, 0.2)")
 
 
     def get_num_at_lever(self, state):
@@ -235,9 +235,9 @@ class ExploitativeLIO(object):
         for i, action in enumerate(action_all):
             if i != self.agent_id:
                 if action == 0:  # Lever pulling
-                    reward[i] = 0.67 * reward[i]  # Amplify rewards for work
+                    reward[i] = 2.0 * reward[i]  # Amplify rewards for work
                 elif action == 2:  # Door
-                    reward[i] = 1.5 * reward[i]  # Minimize rewards for competing action
+                    reward[i] = 0.2 * reward[i]  # Minimize rewards for competing action
         
         reward = reward.flatten() * self.r_multiplier 
      

@@ -18,7 +18,8 @@ import os
 import random
 
 import numpy as np
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
+tf.disable_eager_execution()
 
 
 
@@ -404,11 +405,11 @@ if __name__ == '__main__':
 
     if args.exp == 'er':
         config = config_room_lio.get_config()
-        # For ER(4,2) experiment
-        n=4 # Number of agents in the Escape Room
-        m=2 # Minimum number of agents required at lever to trigger outcome
+        # For ER(10,6) experiment
+        n=10 # Number of agents in the Escape Room
+        m=6 # Minimum number of agents required at lever to trigger outcome
         # config.main.dir_name = 'LIO_Exploitative_test_ER42'  # Directory for exploitative agent logs
-        config.main.dir_name = 'er_lio_4_2' # Directory for normal agent logs
+        config.main.dir_name = 'er_lio_10_6' # Directory for normal agent logs
         config.env.min_at_lever = m
         config.env.n_agents = n
         config.main.exp_name = 'er%d'%args.num

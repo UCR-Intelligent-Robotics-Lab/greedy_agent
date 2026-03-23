@@ -8,8 +8,8 @@ import sys, os
 sys.path.append(os.path.abspath(os.path.join('../..')))
 
 import numpy as np
-import tensorflow as tf
-
+import tensorflow.compat.v1 as tf
+tf.disable_eager_execution()
 
 
 from lio.alg import config_ssd_lio, evaluate
