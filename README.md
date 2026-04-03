@@ -12,9 +12,10 @@ PIMbot introduces two forms of reward function manipulation in multi-agent reinf
 ## Setup
 
 - Goto ./lio folder.
-- Python 3.6
+- Python 3.6 or Python 3.10+ (using `tf_keras`)
 - Tensorflow >= 1.12
-- OpenAI Gym == 0.10.9
+- OpenAI Gym == 0.10.9 (Or extracted version provided)
+- If you encounter a `dense` layer error regarding Keras 3 on newer TensorFlow installations, please install `tf_keras` (`pip install tf_keras`) and run scripts with `TF_USE_LEGACY_KERAS=1` prepended. This has been automated in our `scripts/` folder!
 - Clone and `pip install` [Sequential Social Dilemma](https://github.com/011235813/sequential_social_dilemma_games), which is a fork from the [original](https://github.com/eugenevinitsky/sequential_social_dilemma_games) open-source implementation.
 - Clone and `pip install` [LOLA](https://github.com/alshedivat/lola) if you wish to run this baseline.
 - Clone this repository and run `$ pip install -e .` from the root.

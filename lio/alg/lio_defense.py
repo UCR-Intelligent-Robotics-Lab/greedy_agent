@@ -185,7 +185,7 @@ class LIODefense(object):
                return self.energy_param * DOOR_BASE_COST
 
         else:
-            raise ValueError(f"Invalid action: {action}")
+            return getattr(self, "energy_param", 1.0) * 10.09
 
     def run_actor(self, obs, sess, epsilon, prime=False):
         feed = {self.obs: np.array([obs]), self.epsilon: epsilon}
