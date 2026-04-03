@@ -35,7 +35,6 @@ from lio.alg.lio_agent_greedy import greedy, adversarial
 from lio.alg.lio_defense import LIODefense
 from lio.alg.lio_defense_exploitative import LIODefenseExploitative as LIODefense_E
 
-from lola.envs.prisoners_dilemma import IteratedPrisonersDilemma
 
 
 

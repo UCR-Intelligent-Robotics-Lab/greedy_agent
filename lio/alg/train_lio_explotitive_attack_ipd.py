@@ -36,7 +36,6 @@ from lio.env import ipd_wrapper
 from lio.env import room_symmetric
 from lio.alg.lio_agent_greedy import greedy, adversarial
 
-from lola.envs.prisoners_dilemma import IteratedPrisonersDilemma
 
 
 
