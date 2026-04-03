@@ -105,11 +105,17 @@ The [Reciprocators](https://arxiv.org/abs/2410.21360) framework has been fully i
 - **Codebase:** Included in the `reciprocators/` directory.
 - **Architectural Changes:** The `StateEncoder` in `reciprocators/src/agents/components.py` was modified to support 1D vector observations natively (falling back from the original Conv2D implementation), allowing seamless evaluation on existing grid and matrix games without external heavy simulators.
 - **Execution:** 
-  You can find the run scripts in the `scripts/` folder or run them directly:
+  You can use the automated bash scripts provided in the `scripts/` folder or run them directly:
   ```bash
   cd reciprocators
   python run_er.py --episodes 5000 --device cuda
   python run_ipd.py --episodes 5000 --device cuda
+  python run_staghunt.py --episodes 5000 --device cuda
+  
+  # Or run ADMO attacks directly
+  python run_er_admo.py --episodes 5000 --device cuda
+  python run_ipd_admo.py --episodes 5000 --device cuda
+  python run_staghunt_admo.py --episodes 5000 --device cuda
   ```
 
 ### 2. Spatial Stag Hunt Benchmark
