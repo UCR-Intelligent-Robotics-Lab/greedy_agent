@@ -95,3 +95,33 @@ Code is implemented based on [Learning to Incentivize Other Learning Agents](htt
 See [LICENSE](LICENSE).
 
 SPDX-License-Identifier: MIT
+
+## New Baselines and Benchmarks (Reciprocators and ADMO)
+
+We have extended this repository to incorporate the **Reciprocators** baseline and a novel **Spatial Stag Hunt** benchmark. Additionally, we have integrated the **Adaptive Multi-Objective (ADMO)** attack strategy for these new settings.
+
+### 1. Reciprocators Integration
+The [Reciprocators](https://arxiv.org/abs/2410.21360) framework has been fully integrated and modified to run natively on the environments from this repository (Escape Room and IPD). 
+- **Codebase:** Included in the `reciprocators/` directory.
+- **Architectural Changes:** The `StateEncoder` in `reciprocators/src/agents/components.py` was modified to support 1D vector observations natively (falling back from the original Conv2D implementation), allowing seamless evaluation on existing grid and matrix games without external heavy simulators.
+- **Execution:** 
+  You can find the run scripts in the `scripts/` folder or run them directly:
+  ```bash
+  cd reciprocators
+  python run_er.py --episodes 5000 --device cuda
+  python run_ipd.py --episodes 5000 --device cuda
+  ```
+
+### 2. Spatial Stag Hunt Benchmark
+We introduced a custom, SOTA Multi-Agent Reinforcement Learning (MARL) benchmark: **Spatial Stag Hunt**. This environment extends beyond simple matrix games (like IPD) and 1D coordination lines (like Escape Room) by introducing a 2D 5x5 spatial sparse environment containing 2 learning agents, 2 stationary Hares, and 1 mobile Stag.
+
+- **LIO Implementation:** Evaluated under `lio/env/staghunt.py` and `lio/alg/lio/train_lio_staghunt.py`.
+- **Reciprocators Implementation:** Evaluated under `reciprocators/run_staghunt.py`.
+
+### 3. ADMO Attacks
+We extended the Adaptive Multi-Objective (ADMO) attack to exploit both the new Spatial Stag Hunt environment and the new Reciprocators agent baseline.
+- **LIO ADMO:** Added `lio/alg/lio/train_lio_staghunt_admo.py`.
+- **Reciprocators ADMO:** Added an ADMO controller (`reciprocators/admo.py`) adapted for PPO-style intrinsic reward manipulation without explicit environmental reward exchange. Implemented in `run_er_admo.py`, `run_ipd_admo.py`, and `run_staghunt_admo.py`.
+
+### Scripts
+A comprehensive suite of `autorun` bash scripts has been added to the `scripts/` folder. All old scripts were prefixed properly and we added autorun variants for LIO, Reciprocators, and their respective ADMO attacks.
