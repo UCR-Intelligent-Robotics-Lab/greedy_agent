@@ -12,7 +12,7 @@ from __future__ import print_function
 
 import sys, os
 # Add greedy_agent_v1 path
-path_to_add = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../..'))
+path_to_add = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
 sys.path.insert(0, path_to_add)
 
 import argparse
@@ -51,7 +51,7 @@ def train(config):
 
     dir_name = config.main.dir_name
     exp_name = config.main.exp_name
-    log_path = os.path.join('..', '..', 'results', exp_name, dir_name)
+    log_path = os.path.join('..', 'results', exp_name, dir_name)
     model_name = config.main.model_name
     save_period = config.main.save_period
 

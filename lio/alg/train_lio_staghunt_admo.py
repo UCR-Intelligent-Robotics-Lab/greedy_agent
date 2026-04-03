@@ -13,7 +13,7 @@ from __future__ import print_function
 import sys
 import os
 
-path_to_add = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../..'))
+path_to_add = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
 sys.path.insert(0, path_to_add)
 
 import argparse
@@ -95,7 +95,7 @@ def run_episode(sess, env, list_agents, epsilon, prime=False):
 def train(config, admo_cfg: AdaptiveMOConfig, adversary_idx: int = 0):
     dir_name = config.main.dir_name
     exp_name = config.main.exp_name
-    log_path = os.path.join('..', '..', 'results', exp_name, dir_name)
+    log_path = os.path.join('..', 'results', exp_name, dir_name)
     model_name = config.main.model_name
     save_period = config.main.save_period
 
