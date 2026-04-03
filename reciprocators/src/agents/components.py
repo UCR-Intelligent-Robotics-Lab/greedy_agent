@@ -64,18 +64,19 @@ class Actor(nn.Module):
     def act(self, state_bs: torch.Tensor, memory: Memory):
         """
         Produce an action based on the current state and policy, and store the states, logprobs, and value estimates.
-        Note that this will be called with torch.no_grad(), so purely for forward computation and not optimization.
         :param state_bs: Batch of states, of shape (batch_size, *state_shape)
         :param memory: Memory object.
         :return: Batch of actions, of shape (batch_size, *action_shape).
         """
-        action_probs_bs = self(state_bs)
-        dist = Categorical(action_probs_bs)
-        action_bs = dist.sample()
+        with torch.no_grad():
+            action_probs_bs = self(state_bs)
+            dist = Categorical(action_probs_bs)
+            action_bs = dist.sample()
+            log_prob = dist.log_prob(action_bs)
 
-        memory.states.append(state_bs)
-        memory.actions.append(action_bs)
-        memory.logprobs.append(dist.log_prob(action_bs))
+        memory.states.append(state_bs.detach())
+        memory.actions.append(action_bs.detach())
+        memory.logprobs.append(log_prob.detach())
 
         return action_bs.squeeze(0)
 
@@ -140,18 +141,19 @@ class RecurrentActor(nn.Module):
     def act(self, state_bs: torch.Tensor, memory: Memory):
         """
         Produce an action based on the current state and policy, and store the states, logprobs, and value estimates.
-        Note that this will be called with torch.no_grad(), so purely for forward computation and not optimization.
         :param state_bs: Batch of states, of shape (batch_size, *state_shape)
         :param memory: Memory object.
         :return: Batch of actions, of shape (batch_size, *action_shape).
         """
-        action_probs_bs = self(state_bs)
-        dist = Categorical(action_probs_bs)
-        action_bs = dist.sample()
+        with torch.no_grad():
+            action_probs_bs = self(state_bs)
+            dist = Categorical(action_probs_bs)
+            action_bs = dist.sample()
+            log_prob = dist.log_prob(action_bs)
 
-        memory.states.append(state_bs)
-        memory.actions.append(action_bs)
-        memory.logprobs.append(dist.log_prob(action_bs))
+        memory.states.append(state_bs.detach())
+        memory.actions.append(action_bs.detach())
+        memory.logprobs.append(log_prob.detach())
 
         return action_bs
 
@@ -228,6 +230,10 @@ class ConvActorCritic(nn.Module):
             self.actor.reset()
 
         action_probs_ba = self.actor(state_bs)
+        # Prevent invalid probabilities from causing NaNs in the Categorical distribution.
+        action_probs_ba = torch.nan_to_num(action_probs_ba, nan=1.0 / action_probs_ba.shape[-1], posinf=1.0, neginf=0.0)
+        action_probs_ba = action_probs_ba.clamp(1e-8, 1.0)
+        action_probs_ba = action_probs_ba / action_probs_ba.sum(dim=-1, keepdim=True)
 
         action_bs = action_bs.flatten(end_dim=1)
         if self.rnn:

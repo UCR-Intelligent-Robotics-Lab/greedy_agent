@@ -30,7 +30,8 @@ class EnvWrapper:
 
     def step(self, actions: torch.Tensor):
         list_actions = actions[0].tolist()
-        list_rewards = [np.zeros(self.num_agents) for _ in range(self.num_agents)]
+        # each agent reports a (n_agents-1) reward vector as expected by room_agent
+        list_rewards = [np.zeros(self.num_agents - 1) for _ in range(self.num_agents)]
         obs, rewards, done = self.env.step(list_actions, list_rewards)
         
         obs_tensor = torch.tensor(np.array(obs), device=self.device, dtype=torch.float).unsqueeze(1)
@@ -114,16 +115,14 @@ def main():
                 agent.observe((None, rewards[:, i], None, None))
                 
             state_tensor = last_obs[0].unsqueeze(0)
-            action_tensor = actions.unsqueeze(0)
-            reward_tensor = rewards.unsqueeze(0)
-            
-            influence_estimator.episode_memory.append_transition(state_tensor, action_tensor, reward_tensor)
-            if done:
-                influence_estimator.episode_memory.dones.append(done)
-                
-            for agent in agents:
-                agent.update_influence_balance(state_tensor, action_tensor, reward_tensor)
+            action_tensor = actions
+            reward_tensor = rewards
 
+            influence_estimator.joint_memory.states.append(state_tensor)
+            influence_estimator.joint_memory.actions.append(action_tensor)
+            influence_estimator.joint_memory.rewards.append(reward_tensor)
+
+            # update_influence_balance not available; joint_memory manages influence now
             last_obs = obs
 
         # Apply ADMO step

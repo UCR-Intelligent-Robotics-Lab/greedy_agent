@@ -2,6 +2,60 @@ import numpy as np
 import tensorflow.compat.v1 as tf
 tf.disable_v2_behavior()
 
+# ── Keras-3 / TF-2.16+ compatibility shim ──────────────────────────────────
+# tf.layers was removed in Keras 3. Re-expose the symbols via a lightweight
+# wrapper so all downstream code that calls tf.layers.dense / batch_normalization
+# / etc. continues to work without any algorithmic changes.
+import types as _types
+
+def _make_layers_shim():
+    _mod = _types.ModuleType("tf.layers_shim")
+
+    def dense(inputs, units, activation=None, use_bias=True,
+              kernel_initializer=None, bias_initializer=tf.zeros_initializer(),
+              name=None, reuse=None):
+        """Drop-in for tf.layers.dense with exact TF1 variable naming."""
+        if kernel_initializer is None:
+            kernel_initializer = tf.glorot_uniform_initializer()
+        # Try static shape first
+        last_dim = inputs.shape[-1]
+        if hasattr(last_dim, "value"):
+            input_dim = last_dim.value
+        else:
+            try:
+                input_dim = int(last_dim)
+            except (TypeError, ValueError):
+                # Fallback to dynamic shape if static not available
+                input_dim = tf.shape(inputs)[-1]
+        with tf.variable_scope(name or "dense", reuse=reuse):
+            kernel = tf.get_variable(
+                "kernel",
+                shape=[input_dim, units],
+                initializer=kernel_initializer,
+            )
+            if use_bias:
+                bias = tf.get_variable(
+                    "bias",
+                    shape=[units],
+                    initializer=bias_initializer,
+                )
+            out = tf.matmul(inputs, kernel)
+            if use_bias:
+                out = tf.nn.bias_add(out, bias)
+            if activation is not None:
+                out = activation(out)
+        return out
+
+    def batch_normalization(inputs, training=False, name=None, reuse=None):
+        with tf.variable_scope(name or "bn", reuse=reuse):
+            return tf.keras.layers.BatchNormalization()(inputs, training=training)
+
+    _mod.dense = dense
+    _mod.batch_normalization = batch_normalization
+    return _mod
+
+tf.layers = _make_layers_shim()
+# ── end shim ────────────────────────────────────────────────────────────────
 
 
 def conv(t_input, scope, n_filters=6, k=(3, 3), s=(1, 1), data_format='NHWC'):

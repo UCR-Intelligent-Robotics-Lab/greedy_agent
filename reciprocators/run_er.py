@@ -29,7 +29,8 @@ class EnvWrapper:
 
     def step(self, actions: torch.Tensor):
         list_actions = actions[0].tolist()
-        list_rewards = [np.zeros(self.num_agents) for _ in range(self.num_agents)]
+        # each agent provides reward values to (n_agents - 1) others
+        list_rewards = [np.zeros(self.num_agents - 1) for _ in range(self.num_agents)]
         if self.env.name == 'er':
             obs, rewards, done = self.env.step(list_actions, list_rewards)
         else:
@@ -108,16 +109,15 @@ def main():
                 agent.observe((None, rewards[:, i], None, None))
                 
             state_tensor = last_obs[0].unsqueeze(0)
-            action_tensor = actions.unsqueeze(0)
-            reward_tensor = rewards.unsqueeze(0)
-            
-            influence_estimator.episode_memory.append_transition(state_tensor, action_tensor, reward_tensor)
-            if done:
-                influence_estimator.episode_memory.dones.append(done)
-                
-            for agent in agents:
-                agent.update_influence_balance(state_tensor, action_tensor, reward_tensor)
+            action_tensor = actions
+            reward_tensor = rewards
 
+            # ValueOfInfluence uses joint_memory; align with its API.
+            influence_estimator.joint_memory.states.append(state_tensor)
+            influence_estimator.joint_memory.actions.append(action_tensor)
+            influence_estimator.joint_memory.rewards.append(reward_tensor)
+
+            # update_influence_balance is not present in this version; use direct influence estimator memory
             last_obs = obs
 
         influence_estimator.store()

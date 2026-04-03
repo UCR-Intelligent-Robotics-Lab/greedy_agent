@@ -15,6 +15,12 @@ class Actor(object):
 
         self.position = action
         if observe_given:
+            reward_given = np.asarray(reward_given, dtype=float).flatten()
+            if reward_given.shape[0] == self.n_agents:
+                # Exclude self reward share to maintain (n_agents-1) vector
+                reward_given = np.delete(reward_given, self.agent_id)
+            elif reward_given.shape[0] != self.n_agents - 1:
+                raise ValueError(f"Unexpected reward_given length {reward_given.shape[0]} for agent {self.agent_id}")
             self.total_given += reward_given
 
     def get_obs(self, state, observe_given=True):

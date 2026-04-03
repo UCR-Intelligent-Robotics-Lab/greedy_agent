@@ -32,8 +32,13 @@ class PPO:
         """
         # Compute discounted rewards-to-go (state values) to train value function
         state_values = compute_returns(memory.get_rewards(), self.gamma).flatten(end_dim=1)  # (T, bsz)
-        # Normalize state values
-        state_values = (state_values - state_values.mean()) / (state_values.std() + 1e-5)
+        # Normalize state values, robust to degenerate std.
+        state_values = state_values.nan_to_num(0.0)
+        mean = state_values.mean()
+        std = state_values.std()
+        if std <= 1e-12:
+            std = 1e-5
+        state_values = (state_values - mean) / std
 
         # Convert lists to Tensors
         old_states = torch.stack(memory.get_states()).detach()  # (T, bsz, *state_shape)
@@ -44,10 +49,18 @@ class PPO:
             old_states = old_states.flatten(end_dim=1)
         old_logprobs = old_logprobs.flatten(end_dim=1)
 
+        # Stabilize log probabilities
+        old_logprobs = old_logprobs.nan_to_num(0.0, posinf=1e3, neginf=-1e3)
+
         # Optimize policy for K epochs:
         for _ in tqdm(range(self.K_epochs)):
             # Evaluate old actions and values:
             logprobs, state_values_hat, dist_entropy = self.policy.evaluate(old_states, old_actions)
+            # clamp any possible NaNs inside the outputs
+            state_values_hat = state_values_hat.nan_to_num(0.0, posinf=1e6, neginf=-1e6)
+            dist_entropy = dist_entropy.nan_to_num(0.0, posinf=1e6, neginf=-1e6)
+            logprobs = logprobs.nan_to_num(0.0, posinf=1e6, neginf=-1e6)
+
             # Find the ratio (pi_theta / pi_theta__old):
             ratios = torch.exp(logprobs - old_logprobs.detach())
 
@@ -63,6 +76,12 @@ class PPO:
             self.optimizer.zero_grad()
             loss.mean().backward()
             self.optimizer.step()
+
+            # Keep weights numerically stable
+            for p in self.policy.parameters():
+                p.data = p.data.nan_to_num(0.0, posinf=1e2, neginf=-1e2)
+            for p in self.policy_old.parameters():
+                p.data = p.data.nan_to_num(0.0, posinf=1e2, neginf=-1e2)
 
         # Copy new weights into old policy, which will be used for acting:
         self.policy_old.load_state_dict(self.policy.state_dict())

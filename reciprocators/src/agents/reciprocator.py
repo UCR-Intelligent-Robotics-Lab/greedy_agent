@@ -56,7 +56,9 @@ class Reciprocator(Agent):
             "signed_petty_payoff": self.signed_petty_payoff_rr,
             "signed_grudge_petty_payoff": self.signed_grudge_petty_payoff_rr,
             "grudge_minus_debit": self.grudge_minus_debit_rr,
-            "signed_grudge_minus_debit": self.signed_grudge_minus_debit_rr
+            "signed_grudge_minus_debit": self.signed_grudge_minus_debit_rr,
+            # Backwards compatibility: (hydro)pass-through linear weighting
+            "linear": self.petty_rr
         }
 
         try:

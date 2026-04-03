@@ -160,7 +160,6 @@ class TargetMemory:
         self.device = device
 
     def clear_memory(self):
-        del self.inputs[:]
         del self.states[:]
         del self.actions[:]
         del self.rewards[:]
@@ -168,6 +167,25 @@ class TargetMemory:
 
     def __len__(self):
         return len(self.rewards)
+
+    def _cat_along_time(self, deque_items, device):
+        if len(deque_items) == 0:
+            return torch.tensor([]).to(device)
+
+        max_t = max(item.shape[0] for item in deque_items)
+        padded_items = []
+        for item in deque_items:
+            if item.shape[0] == max_t:
+                padded_items.append(item)
+            else:
+                pad_shape = (max_t - item.shape[0],) + item.shape[1:]
+                padded = torch.cat([item, item.new_zeros(pad_shape)], dim=0)
+                padded_items.append(padded)
+
+        return torch.cat(padded_items, dim=1).to(device)
+
+    def __repr__(self):
+        return f"TargetMemory(maxlen={self.maxlen}, length={len(self)})"
 
     def push_states(self, states: torch.Tensor):
         self.states.append(states.to(self.device))
@@ -185,22 +203,22 @@ class TargetMemory:
         """Returns states as a Tensor of shape (T, bsz * buffer_size, *state_dim)."""
         if device is None:
             device = self.device
-        return torch.cat(list(self.states), dim=1).to(device)
+        return self._cat_along_time(self.states, device)
 
     def get_actions(self, device: torch.device = None):
         """Returns actions as a Tensor of shape (T, bsz * buffer_size, num_players)."""
         if device is None:
             device = self.device
-        return torch.cat(list(self.actions), dim=1).to(device)
+        return self._cat_along_time(self.actions, device)
 
     def get_rewards(self, device: torch.device = None):
         """Returns rewards as a Tensor of shape (T, bsz * buffer_size, num_players)."""
         if device is None:
             device = self.device
-        return torch.cat(list(self.rewards), dim=1).to(device)
+        return self._cat_along_time(self.rewards, device)
 
     def get_returns(self, device: torch.device = None):
         """Returns returns as a Tensor of shape (T, bsz * buffer_size, num_players)."""
         if device is None:
             device = self.device
-        return torch.cat(list(self.returns), dim=1).to(device)
+        return self._cat_along_time(self.returns, device)

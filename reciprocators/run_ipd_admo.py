@@ -113,16 +113,14 @@ def main():
                 agent.observe((None, rewards[:, i], None, None))
                 
             state_tensor = last_obs[0].unsqueeze(0)
-            action_tensor = actions.unsqueeze(0)
-            reward_tensor = rewards.unsqueeze(0)
-            
-            influence_estimator.episode_memory.append_transition(state_tensor, action_tensor, reward_tensor)
-            if done:
-                influence_estimator.episode_memory.dones.append(done)
-                
-            for agent in agents:
-                agent.update_influence_balance(state_tensor, action_tensor, reward_tensor)
+            action_tensor = actions
+            reward_tensor = rewards
 
+            influence_estimator.joint_memory.states.append(state_tensor)
+            influence_estimator.joint_memory.actions.append(action_tensor)
+            influence_estimator.joint_memory.rewards.append(reward_tensor)
+
+            # update_influence_balance not available; we rely on influence estimator computed at update()
             last_obs = obs
 
         # Apply ADMO step
