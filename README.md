@@ -132,3 +132,9 @@ We extended the Adaptive Multi-Objective (ADMO) attack to exploit both the new S
 
 ### Scripts
 A comprehensive suite of `autorun` bash scripts has been added to the `scripts/` folder. All old scripts were prefixed properly and we added autorun variants for LIO, Reciprocators, and their respective ADMO attacks.
+
+### 4. Unified Evaluation and Logging
+All Reciprocator and ADMO runner scripts have been refactored to generate evaluation metrics identically to the original LIO baselines. 
+- A unified `log.csv` is produced for every run during the evaluation period, containing exact match column headers (e.g., `A1_reward_env`, `A1_total_energy`, `A1_reward_per_energy`).
+- ADMO execution scripts automatically append additional tracking columns for dynamic Pareto weights (`alpha_inc`, `alpha_pol`, `returns_gap`, etc.).
+- All experiment outputs, regardless of whether they use the LIO or Reciprocators algorithmic backend, are centralized and routed to the `lio/results/` directory. This ensures streamlined plotting, visualization, and head-to-head comparison.
