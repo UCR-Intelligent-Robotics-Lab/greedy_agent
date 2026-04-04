@@ -39,6 +39,7 @@ class EnvWrapper:
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--episodes', type=int, default=5000)
+    parser.add_argument('--num', type=int, default=1)
     parser.add_argument('--device', type=str, default='cuda' if torch.cuda.is_available() else 'cpu')
     args = parser.parse_args()
 
@@ -84,8 +85,32 @@ def main():
         }
         agents.append(Reciprocator(**reciprocator_kwargs))
 
+    from evaluate import test_ipd
+    n_eval = config.alg.n_eval
+    period = config.alg.period
+
+    exp_name = f"ipd_{args.num}"
+    dir_name = 'ipd_reciprocators'
+    log_path = os.path.join(os.path.dirname(__file__), '..', 'lio', 'results', exp_name, dir_name)
+    os.makedirs(log_path, exist_ok=True)
+
+    list_agent_meas = []
+    list_suffix = ['given', 'received', 'reward_env', 'reward_total', 'total_energy', 'reward_per_energy']
+    for agent_id in range(1, env.num_agents + 1):
+        for suffix in list_suffix:
+            list_agent_meas.append('A%d_%s' % (agent_id, suffix))
+            
+    header = 'episode,step_train,step,'
+    header += ','.join(list_agent_meas)
+    header += '\n'
+    
+    with open(os.path.join(log_path, 'log.csv'), 'w') as f:
+        f.write(header)
+
     print("Starting training on IPD...")
     episode_count = 0
+    step_train = 0
+    step = 0
     last_obs = env.reset()
 
     for episode in tqdm(range(1, args.episodes + 1)):
@@ -99,6 +124,7 @@ def main():
             actions_list = [agent.act(last_obs[i]) for i, agent in enumerate(agents)]
             actions = torch.stack(actions_list, dim=0).unsqueeze(0)  # (1, num_agents)
             obs, rewards, done, info = env.step(actions)
+            step += 1
 
             for i, agent in enumerate(agents):
                 agent.observe((None, rewards[:, i], None, None))
@@ -111,7 +137,6 @@ def main():
             influence_estimator.joint_memory.actions.append(action_tensor)
             influence_estimator.joint_memory.rewards.append(reward_tensor)
 
-            # update_influence_balance is not present in this version; use direct influence estimator memory
             last_obs = obs
 
         influence_estimator.store()
@@ -120,6 +145,32 @@ def main():
             agent.update()
 
         influence_estimator.episode_reset()
+        step_train += 1
+
+        if episode % period == 0:
+            (rewards_given, rewards_received, rewards_env,
+             rewards_total, cumulative_energy, reward_per_energy) = test_ipd(n_eval, env, agents, device)
+            
+            cumulative_energy_expanded = np.tile(cumulative_energy, (rewards_given.shape[0], 1))
+            reward_per_energy_expanded = np.tile(reward_per_energy, (rewards_given.shape[0], 1))
+
+            matrix_combined = np.stack([
+                rewards_given, 
+                rewards_received, 
+                rewards_env,
+                rewards_total, 
+                cumulative_energy_expanded, 
+                reward_per_energy_expanded
+            ])
+            matrix_mean = np.mean(matrix_combined, axis=1)
+
+            s = '%d,%d,%d' % (episode, step_train, step)
+            for idx in range(env.num_agents):
+                s += ','
+                s += '{:.3e},{:.3e},{:.3e},{:.3e},{:.3e},{:.3e}'.format(*matrix_mean[:, idx])
+            s += '\n'
+            with open(os.path.join(log_path, 'log.csv'), 'a') as f:
+                f.write(s)
 
 if __name__ == '__main__':
     main()

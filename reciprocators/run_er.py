@@ -44,6 +44,7 @@ class EnvWrapper:
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--episodes', type=int, default=5000)
+    parser.add_argument('--num', type=int, default=1)
     parser.add_argument('--device', type=str, default='cuda' if torch.cuda.is_available() else 'cpu')
     args = parser.parse_args()
 
