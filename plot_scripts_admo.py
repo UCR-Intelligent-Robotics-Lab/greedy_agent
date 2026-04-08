@@ -27,13 +27,10 @@ def get_metric(files, metric='A1_reward_env'):
 
 def smooth(y, weight=0.98):
     if y is None or len(y) == 0: return []
-    last = y[0]
-    smoothed = []
-    for point in y:
-        smoothed_val = last * weight + (1 - weight) * point
-        smoothed.append(smoothed_val)
-        last = smoothed_val
-    return smoothed
+    # Use pandas rolling mean for better visual smoothing on high-frequency data
+    window = int(len(y) * 0.05) # 5% of data window
+    if window < 5: window = 5
+    return pd.Series(y).rolling(window, min_periods=1).mean().values
 
 def extract_from_logs(log_file, regex_pattern):
     if not os.path.exists(log_file): return []

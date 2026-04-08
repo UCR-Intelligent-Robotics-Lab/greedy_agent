@@ -1,7 +1,9 @@
 Running experiment 1...
-Traceback (most recent call last):
-  File "/Users/zexinli/Downloads/greedy_agent/lio/alg/train_lio_staghunt.py", line 24, in <module>
-    import tensorflow.compat.v1 as tf
-ModuleNotFoundError: No module named 'tensorflow'
-Experiment 1 completed.
-All experiments completed.
+WARNING:tensorflow:From /Users/zexinli/miniforge3/envs/torch-gpu/lib/python3.10/site-packages/tensorflow/python/compat/v2_compat.py:98: disable_resource_variables (from tensorflow.python.ops.resource_variables_toggle) is deprecated and will be removed in a future version.
+Instructions for updating:
+non-resource variables are not supported in the long term
+WARNING:tensorflow:From /Users/zexinli/miniforge3/envs/torch-gpu/lib/python3.10/site-packages/tensorflow/python/util/dispatch.py:1264: multinomial (from tensorflow.python.ops.random_ops) is deprecated and will be removed in a future version.
+Instructions for updating:
+Use `tf.random.categorical` instead.
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1775685595.859265 35181033 mlir_graph_optimization_pass.cc:437] MLIR V1 optimization pass is not enabled
