@@ -139,6 +139,9 @@ def main():
     admo_cfg = AdaptiveMOConfig(mode=mode_sign, base_k_epochs=10, base_reciprocal_weight=5.0)
     admo_controller = AdaptiveMOController(agents[args.adversary], admo_cfg, gamma=0.99, n_agents=env.num_agents, agent_id=args.adversary)
 
+    from lio.alg import config_staghunt_lio
+    config = config_staghunt_lio.get_config()
+    
     from evaluate import test_staghunt
     n_eval = config.alg.n_eval
     period = config.alg.period

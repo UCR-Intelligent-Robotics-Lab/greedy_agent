@@ -8,7 +8,7 @@ cd ../lio/alg
 for i in $(seq 1 $NUM_EXP)
 do
   echo "Running experiment $i..."
-  TF_USE_LEGACY_KERAS=1 LD_PRELOAD=/lib/aarch64-linux-gnu/libGLdispatch.so python train_lio_ipd_admo.py "$i" --n_agents 2
+  TF_USE_LEGACY_KERAS=1 LD_PRELOAD=/lib/aarch64-linux-gnu/libGLdispatch.so /Users/zexinli/miniforge3/envs/torch-gpu/bin/python train_lio_ipd_admo.py "$i" --n_agents 2
   echo "Experiment $i completed."
 done
 

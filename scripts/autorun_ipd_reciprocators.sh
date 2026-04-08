@@ -7,7 +7,7 @@ cd ../reciprocators
 for i in $(seq 1 $NUM_EXP)
 do
   echo "Running experiment $i..."
-  LD_PRELOAD=/lib/aarch64-linux-gnu/libGLdispatch.so python run_ipd.py
+  LD_PRELOAD=/lib/aarch64-linux-gnu/libGLdispatch.so /Users/zexinli/miniforge3/envs/torch-gpu/bin/python run_ipd.py --num "$i"
   echo "Experiment $i completed."
 done
 

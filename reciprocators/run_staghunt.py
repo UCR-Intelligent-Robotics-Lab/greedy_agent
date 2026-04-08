@@ -136,6 +136,9 @@ def main():
         }
         agents.append(Reciprocator(**reciprocator_kwargs))
 
+    from lio.alg import config_staghunt_lio
+    config = config_staghunt_lio.get_config()
+    
     from evaluate import test_staghunt
     n_eval = config.alg.n_eval
     period = config.alg.period

@@ -8,9 +8,9 @@ cd ../lio/alg
 for i in $(seq 1 $NUM_EXP)
 do
   echo "Running experiment $i..."
-  TF_USE_LEGACY_KERAS=1 LD_PRELOAD=/lib/aarch64-linux-gnu/libGLdispatch.so python train_lio_er_admo.py "$i" --min_at_lever 2 --n_agents 4
-  TF_USE_LEGACY_KERAS=1 LD_PRELOAD=/lib/aarch64-linux-gnu/libGLdispatch.so python train_lio_er_admo.py "$i" --min_at_lever 3 --n_agents 4
-  TF_USE_LEGACY_KERAS=1 LD_PRELOAD=/lib/aarch64-linux-gnu/libGLdispatch.so python train_lio_er_admo.py "$i" --min_at_lever 1 --n_agents 2
+  TF_USE_LEGACY_KERAS=1 LD_PRELOAD=/lib/aarch64-linux-gnu/libGLdispatch.so /Users/zexinli/miniforge3/envs/torch-gpu/bin/python train_lio_er_admo.py "$i" --min_at_lever 2 --n_agents 4
+  TF_USE_LEGACY_KERAS=1 LD_PRELOAD=/lib/aarch64-linux-gnu/libGLdispatch.so /Users/zexinli/miniforge3/envs/torch-gpu/bin/python train_lio_er_admo.py "$i" --min_at_lever 3 --n_agents 4
+  TF_USE_LEGACY_KERAS=1 LD_PRELOAD=/lib/aarch64-linux-gnu/libGLdispatch.so /Users/zexinli/miniforge3/envs/torch-gpu/bin/python train_lio_er_admo.py "$i" --min_at_lever 1 --n_agents 2
   echo "Experiment $i completed."
 done
 
