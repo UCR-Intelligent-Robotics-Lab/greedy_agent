@@ -4,11 +4,14 @@ NUM_EXP=$1
 
 cd ../lio/alg
 
-for i in $(seq 1 $NUM_EXP)
+for agents in 2 3 4
 do
-  echo "Running experiment $i..."
-  TF_USE_LEGACY_KERAS=1 LD_PRELOAD=/lib/aarch64-linux-gnu/libGLdispatch.so /Users/zexinli/miniforge3/envs/torch-gpu/bin/python train_lio_staghunt_admo.py "$i"
-  echo "Experiment $i completed."
+  for i in $(seq 1 $NUM_EXP)
+  do
+    echo "Running experiment $i for Staghunt($agents)..."
+    TF_USE_LEGACY_KERAS=1 LD_PRELOAD=/lib/aarch64-linux-gnu/libGLdispatch.so /Users/zexinli/miniforge3/envs/torch-gpu/bin/python train_lio_staghunt_admo.py "$i" --n_agents $agents
+    echo "Experiment $i completed."
+  done
 done
 
 echo "All experiments completed."

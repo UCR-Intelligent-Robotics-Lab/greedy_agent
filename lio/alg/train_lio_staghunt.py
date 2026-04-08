@@ -149,7 +149,6 @@ def train(config):
     # This handles the special case of two asymmetric agents,
     # one of which is the reward-giver and the other is the recipient  
     if config.lio.asymmetric:
-        assert config.env.n_agents == 2
         for agent_id in range(env.n_agents):
             list_agents[agent_id].set_can_give(
                 agent_id != config.lio.idx_recipient)
@@ -430,13 +429,14 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('exp', type=str, choices=['staghunt'])
     parser.add_argument('num', type=int)
-
+    parser.add_argument('--n_agents', type=int, default=2)
     
     args = parser.parse_args()
 
     if args.exp == 'staghunt':
         config = config_staghunt_lio.get_config()
-        config.main.dir_name = 'staghunt_lio_2'
+        config.env.n_agents = args.n_agents
+        config.main.dir_name = f'staghunt_lio_{args.n_agents}'
         config.main.exp_name = 'staghunt%d'%args.num
         config.main.seed = 12340 + args.num
 

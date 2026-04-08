@@ -281,9 +281,9 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     config = config_staghunt_lio.get_config()
-    config.main.dir_name = 'staghunt_lio_admo'
-    config.main.exp_name = 'staghunt_admo_%d_trail_%d' % (args.n_agents, args.num)
     config.env.n_agents = args.n_agents
+    config.main.dir_name = f'staghunt_lio_admo_{args.n_agents}'
+    config.main.exp_name = 'staghunt_admo_%d_trail_%d' % (args.n_agents, args.num)
 
     mode_sign = +1 if args.mode == 'adversarial' else -1
     admo_cfg = AdaptiveMOConfig(mode=mode_sign,
