@@ -120,14 +120,21 @@ The [Reciprocators](https://arxiv.org/abs/2410.21360) framework has been fully i
   ```
 
 ### 2. Spatial Stag Hunt Benchmark
-We introduced a custom, SOTA Multi-Agent Reinforcement Learning (MARL) benchmark: **Spatial Stag Hunt**. This environment extends beyond simple matrix games (like IPD) and 1D coordination lines (like Escape Room) by introducing a 2D 5x5 spatial sparse environment containing 2 learning agents, 2 stationary Hares, and 1 mobile Stag.
+We introduced a custom, SOTA Multi-Agent Reinforcement Learning (MARL) benchmark: **Spatial Stag Hunt**. This environment expands upon the classic game-theoretic "Stag Hunt" coordination dilemma by framing it as a spatial Markov game, popularized in Deep MARL by works such as *Peysakhovich & Lerer (2018) ("Prosocial learning agents solve generalized Stag Hunts better than selfish ones")* and *Hughes et al. (2018) ("Inequity aversion improves cooperation in multi-agent reinforcement learning")*.
 
-- **LIO Implementation:** Evaluated under `lio/env/staghunt.py` and `lio/alg/lio/train_lio_staghunt.py`.
+**Environment Mechanics:**
+- **The Setup:** A 2D $5 \times 5$ spatial sparse environment containing $N$ learning agents, $N$ stationary Hares, and 1 mobile Stag.
+- **The Dilemma:** 
+  - **Cooperation (Stag):** Yields a high optimal reward (+5.0) but rigidly requires *all $N$ agents* to navigate to the Stag's grid cell simultaneously. If any agent defects, the Stag is missed entirely.
+  - **Defection (Hare):** Yields a smaller, suboptimal reward (+1.0), but can be captured completely independently by any single agent acting selfishly.
+- **Goal:** This framework creates a strict coordination bottleneck where an agent must overcome the temptation of guaranteed small payoffs (hares) and establish absolute trust with their peers to achieve the socially optimal joint payoff (stag). The environment scales dynamically to test bottlenecks at $N=2, 3, \text{ and } 4$ agents.
+
+- **LIO Implementation:** Evaluated under `lio/env/staghunt.py` and `lio/alg/train_lio_staghunt.py`.
 - **Reciprocators Implementation:** Evaluated under `reciprocators/run_staghunt.py`.
 
 ### 3. ADMO Attacks
 We extended the Adaptive Multi-Objective (ADMO) attack to exploit both the new Spatial Stag Hunt environment and the new Reciprocators agent baseline.
-- **LIO ADMO:** Added `lio/alg/lio/train_lio_staghunt_admo.py`.
+- **LIO ADMO:** Added `lio/alg/train_lio_staghunt_admo.py`.
 - **Reciprocators ADMO:** Added an ADMO controller (`reciprocators/admo.py`) adapted for PPO-style intrinsic reward manipulation without explicit environmental reward exchange. Implemented in `run_er_admo.py`, `run_ipd_admo.py`, and `run_staghunt_admo.py`.
 
 ### Scripts
