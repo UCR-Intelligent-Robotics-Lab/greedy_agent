@@ -28,7 +28,7 @@ def get_latest_log_for_env(env_id, is_admo, is_reciprocator=False):
     # Sort by modification time to grab the most recent run
     return sorted(files, key=os.path.getmtime)[-1]
 
-def smooth_curve(x, y, weight=0.8):
+def smooth_curve(x, y, weight=0.95):
     if len(y) == 0: return y
     last = y[0]
     smoothed = []

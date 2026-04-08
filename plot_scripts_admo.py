@@ -25,7 +25,7 @@ def get_metric(files, metric='A1_reward_env'):
     trimmed_vals = [v[:min_len] for v in all_vals]
     return np.mean(trimmed_vals, axis=0)
 
-def smooth(y, weight=0.8):
+def smooth(y, weight=0.98):
     if y is None or len(y) == 0: return []
     last = y[0]
     smoothed = []
@@ -69,10 +69,10 @@ def plot_stdout_logs():
         
         has_data = False
         if clean_vals:
-            ax.plot(smooth(clean_vals, 0.6), label=LABELS['baseline'], color=COLORS['baseline'], alpha=0.9, linewidth=2)
+            ax.plot(smooth(clean_vals, 0.95), label=LABELS['baseline'], color=COLORS['baseline'], alpha=0.9, linewidth=2)
             has_data = True
         if admo_vals:
-            ax.plot(smooth(admo_vals, 0.6), label=LABELS['admo'], color=COLORS['admo'], alpha=0.9, linewidth=2)
+            ax.plot(smooth(admo_vals, 0.95), label=LABELS['admo'], color=COLORS['admo'], alpha=0.9, linewidth=2)
             has_data = True
             
         ax.set_title(f"{env_name} (Max Future Reward Infl.)")
@@ -119,10 +119,10 @@ def plot_csv_results():
 
         has_data = False
         if clean_vals is not None and len(clean_vals) > 0:
-            ax.plot(smooth(clean_vals, 0.8), label=LABELS['baseline'], color=COLORS['baseline'], alpha=0.9, linewidth=2)
+            ax.plot(smooth(clean_vals, 0.95), label=LABELS['baseline'], color=COLORS['baseline'], alpha=0.9, linewidth=2)
             has_data = True
         if admo_vals is not None and len(admo_vals) > 0:
-            ax.plot(smooth(admo_vals, 0.8), label=LABELS['admo'], color=COLORS['admo'], alpha=0.9, linewidth=2)
+            ax.plot(smooth(admo_vals, 0.95), label=LABELS['admo'], color=COLORS['admo'], alpha=0.9, linewidth=2)
             has_data = True
             
         ax.set_title(f"{env_name} (A1 Total Reward)")
