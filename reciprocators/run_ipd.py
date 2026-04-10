@@ -89,8 +89,8 @@ def main():
     n_eval = config.alg.n_eval
     period = config.alg.period
 
-    exp_name = f"ipd_{args.num}"
-    dir_name = 'ipd_reciprocators'
+    exp_name = f"ipd_2_trail_{args.num}"
+    dir_name = 'ipd_reciprocators_2'
     log_path = os.path.join(os.path.dirname(__file__), '..', 'lio', 'results', exp_name, dir_name)
     os.makedirs(log_path, exist_ok=True)
 

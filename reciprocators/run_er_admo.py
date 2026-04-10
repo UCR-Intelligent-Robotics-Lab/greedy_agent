@@ -43,6 +43,8 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--episodes', type=int, default=5000)
     parser.add_argument('--num', type=int, default=1)
+    parser.add_argument('--n_agents', type=int, default=2)
+    parser.add_argument('--min_at_lever', type=int, default=1)
     parser.add_argument('--device', type=str, default='cuda' if torch.cuda.is_available() else 'cpu')
     parser.add_argument('--mode', choices=['adversarial', 'constructive'], default='adversarial')
     parser.add_argument('--adversary', type=int, default=0)
@@ -50,6 +52,8 @@ def main():
 
     device = torch.device(args.device)
     config = config_room_lio.get_config()
+    config.env.n_agents = args.n_agents
+    config.env.min_at_lever = args.min_at_lever
     
     lio_env = room_symmetric.Env(config.env)
     env = EnvWrapper(lio_env, device)
@@ -94,6 +98,32 @@ def main():
     admo_cfg = AdaptiveMOConfig(mode=mode_sign, base_k_epochs=10, base_reciprocal_weight=5.0)
     admo_controller = AdaptiveMOController(agents[args.adversary], admo_cfg, gamma=0.99, n_agents=env.num_agents, agent_id=args.adversary)
 
+
+    from evaluate import test_er
+    n_eval = config.alg.n_eval
+    period = config.alg.period
+
+    exp_name = f"er_admo_{args.n_agents}_{args.min_at_lever}_trail_{args.num}"
+    dir_name = f"er_reciprocators_admo_{args.n_agents}_{args.min_at_lever}"
+    log_path = os.path.join(os.path.dirname(__file__), '..', 'lio', 'results', exp_name, dir_name)
+    os.makedirs(log_path, exist_ok=True)
+
+    list_agent_meas = []
+    list_suffix = ['reward_total', 'reward_env', 'n_lever', 'n_door', 'received', 'given', 'r-lever', 'r-start', 'r-door', 'win_rate', 'total_energy', 'reward_per_energy']
+    for agent_id in range(1, env.num_agents + 1):
+        for suffix in list_suffix:
+            list_agent_meas.append('A%d_%s' % (agent_id, suffix))
+            
+    header = 'episode,step_train,step,'
+    header += ','.join(list_agent_meas)
+    header += ',steps_per_eps\n'
+    
+    with open(os.path.join(log_path, 'log.csv'), 'w') as f:
+        f.write(header)
+    
+    step_train = 0
+    step = 0
+
     print(f"Starting ADMO ({args.mode}) training on ER...")
     episode_count = 0
     last_obs = env.reset()
@@ -110,6 +140,7 @@ def main():
             actions_list = [agent.act(last_obs[i]) for i, agent in enumerate(agents)]
             actions = torch.stack(actions_list, dim=0).unsqueeze(0)  # (1, num_agents)
             obs, rewards, done, info = env.step(actions)
+            step += 1
             episode_rewards.append(rewards)
 
             for i, agent in enumerate(agents):
@@ -135,7 +166,34 @@ def main():
         for agent in agents:
             agent.update()
 
+
         influence_estimator.episode_reset()
+        step_train += 1
+
+        if episode % period == 0:
+            (rewards_total, cumulative_env_rewards, n_move_lever, n_move_door, 
+             rewards_received, rewards_given, steps_per_episode, r_lever, r_start, r_door,
+             win_rate, cumulative_energy, reward_per_energy) = test_er(n_eval, env.env, agents, device)
+            
+            cumulative_energy_expanded = np.tile(cumulative_energy, (rewards_given.shape[0], 1)) if rewards_given.ndim > 1 else cumulative_energy
+            reward_per_energy_expanded = np.tile(reward_per_energy, (rewards_given.shape[0], 1)) if rewards_given.ndim > 1 else reward_per_energy
+
+            matrix_combined = np.stack([
+                rewards_total, cumulative_env_rewards, n_move_lever, n_move_door,
+                rewards_received, rewards_given,
+                r_lever, r_start, r_door, win_rate,
+                cumulative_energy_expanded, reward_per_energy_expanded
+            ])
+            matrix_mean = np.mean(matrix_combined, axis=1) if matrix_combined.ndim > 2 else matrix_combined
+            
+            s = '%d,%d,%d' % (episode, step_train, step)
+            for idx in range(env.num_agents):
+                s += ','
+                s += ('{:.3e},{:.3e},{:.3e},{:.3e},{:.3e},{:.3e},{:.3e},{:.3e},{:.3e},{:.3e},{:.3e},{:.3e}').format(*matrix_mean[:, idx])
+            s += ',%.2f\n' % steps_per_episode
+            with open(os.path.join(log_path, 'log.csv'), 'a') as f:
+                f.write(s)
+
 
 if __name__ == '__main__':
     main()
