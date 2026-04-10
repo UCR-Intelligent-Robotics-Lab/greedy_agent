@@ -55,10 +55,9 @@ def generate_staghunt_plot():
         ax = axes[idx]
         env_id = 'staghunt'
         
-        # Staghunt(2) corresponds to our previous runs, others might need a different naming pattern
-        # If no other files exist yet, the plot will just show what's available
+        # General glob patterns
         clean_glob = f"lio/results/{env_id}*/{env_id}_lio_{n_agents}/log.csv"
-        admo_glob = f"lio/results/{env_id}_admo_{n_agents}*/{env_id}_lio_admo/log.csv"
+        admo_glob = f"lio/results/{env_id}_admo_{n_agents}*/{env_id}_lio_admo_{n_agents}/log.csv"
         
         # For N=2 we know the existing path structure from prior runs
         if n_agents == 2:
@@ -75,26 +74,43 @@ def generate_staghunt_plot():
         
         if clean_arrs is None:
              clean_arrs, episodes_clean = get_metric_arrays(clean_files, 'A1_reward_env')
-             admo_arrs, episodes_admo = get_metric_arrays(admo_files, 'A1_reward_env')
              # Normalizing approximation
              if clean_arrs is not None: clean_arrs = clean_arrs / 5.0
+        
+        if admo_arrs is None:
+             admo_arrs, episodes_admo = get_metric_arrays(admo_files, 'A1_reward_env')
+             # Normalizing approximation
              if admo_arrs is not None: admo_arrs = admo_arrs / 5.0
 
-        if clean_arrs is not None and admo_arrs is not None:
+        has_data = False
+        
+        # Plot Clean data
+        if clean_arrs is not None:
+            has_data = True
             means_clean = np.mean(clean_arrs, axis=0)
+            mins_clean = np.min(clean_arrs, axis=0)
+            maxs_clean = np.max(clean_arrs, axis=0)
             
+            t_clean = episodes_clean / 1000.0
+
+            # Plot Baseline (Area + Line) - Mapped to light blue to match typical baseline
+            ax.fill_between(t_clean, mins_clean, maxs_clean, alpha=ALPHA_FILL, color=COLOR_ADMO)
+            ax.plot(t_clean, means_clean, color=COLOR_ADMO, label='LIO Baseline', linewidth=1.5, marker='.', markersize=3)
+
+        # Plot ADMO data
+        if admo_arrs is not None:
+            has_data = True
             means_admo = np.mean(admo_arrs, axis=0)
             mins_admo = np.min(admo_arrs, axis=0)
             maxs_admo = np.max(admo_arrs, axis=0)
             
             t_admo = episodes_admo / 1000.0
-            t_clean = episodes_clean / 1000.0
 
-            ax.fill_between(t_admo, mins_admo, maxs_admo, alpha=ALPHA_FILL, color=COLOR_ADMO)
-            ax.plot(t_admo, means_admo, color=COLOR_ADMO, label='ADMO', linewidth=1.5)
-
-            ax.plot(t_clean, means_clean, color=COLOR_BASELINE, label='Baseline', linewidth=1.5, marker='.', markersize=3)
+            # Plot ADMO (Area + Line) - Mapped to tab:orange to match requested style
+            ax.fill_between(t_admo, mins_admo, maxs_admo, alpha=ALPHA_FILL, color=COLOR_BASELINE)
+            ax.plot(t_admo, means_admo, color=COLOR_BASELINE, label='ADMO', linewidth=1.5, marker='.', markersize=3)
             
+        if has_data:
             ax.grid(color='silver', linestyle='--', linewidth=0.5)
             ax.set_xlabel('Episodes (×1000)', fontsize=12)
             if idx == 0:
