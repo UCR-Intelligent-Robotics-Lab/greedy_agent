@@ -100,7 +100,8 @@ def run_episode(sess, env, list_agents, epsilon, prime=False, adversary_idx=None
 def train(config, admo_cfg: AdaptiveMOConfig, adversary_idx: int = 0):
     dir_name = config.main.dir_name
     exp_name = config.main.exp_name
-    log_path = os.path.join('..', 'results', exp_name, dir_name)
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    log_path = os.path.join(base_dir, '..', 'results', exp_name, dir_name)
     model_name = config.main.model_name
     save_period = config.main.save_period
 
