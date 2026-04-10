@@ -55,8 +55,8 @@ def generate_staghunt_plot():
         env_id = 'staghunt'
         
         # General glob patterns
-        clean_glob = f"results/{env_id}_{n_agents}_trail_*/{env_id}_lio_{n_agents}/log.csv"
-        admo_glob = f"results/{env_id}_admo_{n_agents}_trail_*/{env_id}_lio_admo_{n_agents}/log.csv"
+        clean_glob = f"lio/results/{env_id}_{n_agents}_trail_*/{env_id}_lio_{n_agents}/log.csv"
+        admo_glob = f"lio/results/{env_id}_admo_{n_agents}_trail_*/{env_id}_lio_admo_{n_agents}/log.csv"
 
         clean_files = glob.glob(clean_glob)
         admo_files = glob.glob(admo_glob)
