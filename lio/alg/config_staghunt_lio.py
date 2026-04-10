@@ -4,7 +4,7 @@ def get_config():
     config = configdict.ConfigDict()
 
     config.alg = configdict.ConfigDict()
-    config.alg.n_episodes = 25000
+    config.alg.n_episodes = 5000
     config.alg.n_eval = 10
     config.alg.n_test = 100
     config.alg.name = 'lio'

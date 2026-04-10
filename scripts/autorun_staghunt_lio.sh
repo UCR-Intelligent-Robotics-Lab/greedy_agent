@@ -4,7 +4,7 @@ NUM_EXP=$1
 
 cd ../lio/alg
 
-for agents in 3 4
+for agents in 2 3 4
 do
   for i in $(seq 1 $NUM_EXP)
   do

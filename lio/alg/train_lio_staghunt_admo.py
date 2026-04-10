@@ -37,7 +37,7 @@ from lio.alg.train_lio_er_admo import (
 from lio.utils import util
 
 
-def run_episode(sess, env, list_agents, epsilon, prime=False):
+def run_episode(sess, env, list_agents, epsilon, prime=False, adversary_idx=None, admo_cfg=None):
     list_buffers = [Buffer(env.n_agents) for _ in range(env.n_agents)]
     list_obs = env.reset()
 
@@ -72,6 +72,11 @@ def run_episode(sess, env, list_agents, epsilon, prime=False):
 
         list_obs_next, env_rewards, done = env.step(list_actions)
         mission_status = int(done)
+
+        # ADMO Policy Manipulation for Stag Hunt: the adversary explicitly minimizes team success
+        # by reversing its environmental reward if in adversarial mode.
+        if adversary_idx is not None and admo_cfg is not None and admo_cfg.mode > 0:
+            env_rewards[adversary_idx] = -env_rewards[adversary_idx]
 
         for idx, buf in enumerate(list_buffers):
             energy_cost = list_agents[idx].calculate_energy_cost(list_obs[idx], list_actions[idx])
@@ -181,7 +186,7 @@ def train(config, admo_cfg: AdaptiveMOConfig, adversary_idx: int = 0):
     step_train = 0
 
     for idx_episode in range(1, n_episodes + 1):
-        list_buffers, mission_status = run_episode(sess, env, list_agents, epsilon, prime=False)
+        list_buffers, mission_status = run_episode(sess, env, list_agents, epsilon, prime=False, adversary_idx=adversary_idx, admo_cfg=admo_cfg)
         step += len(list_buffers[0].obs)
 
         if config.lio.decentralized:
@@ -192,7 +197,7 @@ def train(config, admo_cfg: AdaptiveMOConfig, adversary_idx: int = 0):
             agent.update(sess, list_buffers[agent.agent_id], epsilon)
 
         list_buffers_new, mission_status_prime = run_episode(sess, env, list_agents,
-                                                             epsilon, prime=True)
+                                                             epsilon, prime=True, adversary_idx=adversary_idx, admo_cfg=admo_cfg)
         step += len(list_buffers_new[0].obs)
 
         for agent in list_agents:
