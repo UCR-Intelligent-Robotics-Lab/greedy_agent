@@ -8,9 +8,9 @@ from matplotlib.ticker import PercentFormatter
 plt.style.use('seaborn-v0_8-whitegrid')
 
 # Fig 6 style parameters
-COLOR_BASELINE = 'tab:orange'
-COLOR_ADMO = 'tab:blue'
-ALPHA_FILL = 0.2
+COLOR_LINE = 'tab:blue'
+COLOR_FILL = 'gray'
+ALPHA_FILL = 0.3
 
 def get_metric_arrays(files, metric='A1_reward_env', expected_episodes=5000):
     if not files: return None, None
@@ -89,11 +89,11 @@ def generate_staghunt_plot():
             
             t_clean = episodes_clean / 1000.0
 
-            ax_base.fill_between(t_clean, mins_clean, maxs_clean, alpha=ALPHA_FILL, color=COLOR_ADMO)
-            ax_base.plot(t_clean, means_clean, color=COLOR_ADMO, label='LIO Baseline', linewidth=1.5, marker='.', markersize=3)
+            ax_base.fill_between(t_clean, mins_clean, maxs_clean, alpha=ALPHA_FILL, color=COLOR_FILL, linewidth=0)
+            ax_base.plot(t_clean, means_clean, color=COLOR_LINE, label='LIO Baseline', linewidth=1.5, marker='.', markersize=3)
             
             ax_base.grid(color='silver', linestyle='--', linewidth=0.5)
-            ax_base.set_xlim([0, 25])
+            ax_base.set_xlim([0, 5])
             if idx == 0:
                 ax_base.set_ylabel('Success Rate', fontsize=12)
             ax_base.set_title(f'Stag Hunt({n_agents})', fontsize=14)
@@ -112,11 +112,11 @@ def generate_staghunt_plot():
             
             t_admo = episodes_admo / 1000.0
 
-            ax_admo.fill_between(t_admo, mins_admo, maxs_admo, alpha=ALPHA_FILL, color=COLOR_BASELINE)
-            ax_admo.plot(t_admo, means_admo, color=COLOR_BASELINE, label='ADMO Attack', linewidth=1.5, marker='.', markersize=3)
+            ax_admo.fill_between(t_admo, mins_admo, maxs_admo, alpha=ALPHA_FILL, color=COLOR_FILL, linewidth=0)
+            ax_admo.plot(t_admo, means_admo, color=COLOR_LINE, label='ADMO Attack', linewidth=1.5, marker='.', markersize=3)
             
             ax_admo.grid(color='silver', linestyle='--', linewidth=0.5)
-            ax_admo.set_xlim([0, 25])
+            ax_admo.set_xlim([0, 5])
             ax_admo.set_xlabel('Episodes (×1000)', fontsize=12)
             if idx == 0:
                 ax_admo.set_ylabel('Success Rate', fontsize=12)

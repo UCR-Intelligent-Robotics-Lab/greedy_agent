@@ -194,7 +194,8 @@ def train(config):
     step_train = 0
     
 
-    for idx_episode in range(1, n_episodes + 1):
+    from tqdm import tqdm
+    for idx_episode in tqdm(range(1, n_episodes + 1)):
 
         list_buffers, mission_status = run_episode(sess, env, list_agents, epsilon,
                                    prime=False)
@@ -437,7 +438,7 @@ if __name__ == '__main__':
         config = config_staghunt_lio.get_config()
         config.env.n_agents = args.n_agents
         config.main.dir_name = f'staghunt_lio_{args.n_agents}'
-        config.main.exp_name = 'staghunt%d'%args.num
+        config.main.exp_name = f'staghunt_{args.n_agents}_trail_{args.num}'
         config.main.seed = 12340 + args.num
 
     train(config)
