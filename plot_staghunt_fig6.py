@@ -55,8 +55,8 @@ def generate_staghunt_plot():
         env_id = 'staghunt'
         
         # General glob patterns
-        clean_glob = f"lio/results/{env_id}_{n_agents}_trail_*/{env_id}_lio_{n_agents}/log.csv"
-        admo_glob = f"lio/results/{env_id}_admo_{n_agents}_trail_*/{env_id}_lio_admo_{n_agents}/log.csv"
+        clean_glob = f"results/{env_id}_{n_agents}_trail_*/{env_id}_lio_{n_agents}/log.csv"
+        admo_glob = f"results/{env_id}_admo_{n_agents}_trail_*/{env_id}_lio_admo_{n_agents}/log.csv"
 
         clean_files = glob.glob(clean_glob)
         admo_files = glob.glob(admo_glob)
@@ -88,7 +88,7 @@ def generate_staghunt_plot():
             ax_base.plot(t_clean, means_clean, color=COLOR_LINE, label='LIO Baseline', linewidth=1.5, marker='.', markersize=3)
             
             ax_base.grid(color='silver', linestyle='--', linewidth=0.5)
-            ax_base.set_xlim([0, 5])
+            ax_base.set_xlim([0, 25])
             if idx == 0:
                 ax_base.set_ylabel('Success Rate', fontsize=12)
             ax_base.set_title(f'Stag Hunt({n_agents})', fontsize=14)
@@ -111,7 +111,7 @@ def generate_staghunt_plot():
             ax_admo.plot(t_admo, means_admo, color=COLOR_LINE, label='ADMO Attack', linewidth=1.5, marker='.', markersize=3)
             
             ax_admo.grid(color='silver', linestyle='--', linewidth=0.5)
-            ax_admo.set_xlim([0, 5])
+            ax_admo.set_xlim([0, 25])
             ax_admo.set_xlabel('Episodes (×1000)', fontsize=12)
             if idx == 0:
                 ax_admo.set_ylabel('Success Rate', fontsize=12)
