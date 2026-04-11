@@ -145,3 +145,9 @@ All Reciprocator and ADMO runner scripts have been refactored to generate evalua
 - A unified `log.csv` is produced for every run during the evaluation period, containing exact match column headers (e.g., `A1_reward_env`, `A1_total_energy`, `A1_reward_per_energy`).
 - ADMO execution scripts automatically append additional tracking columns for dynamic Pareto weights (`alpha_inc`, `alpha_pol`, `returns_gap`, etc.).
 - All experiment outputs, regardless of whether they use the LIO or Reciprocators algorithmic backend, are centralized and routed to the `lio/results/` directory. This ensures streamlined plotting, visualization, and head-to-head comparison.
+
+### 5. Extended SOTA MARL Evaluation for TECS Paper
+We recently updated the manuscript and response letter for our TECS submission to include an extended evaluation on the SOTA MARL framework (Reciprocators). 
+- **Results Added:** Included success rate plots (`er_results.png`, `ipd_results.png`, `staghunt_results.png`) demonstrating ADMO's ability to systematically degrade the coordination of the Reciprocators baseline across the Escape Room, Iterated Prisoner's Dilemma, and Stag Hunt environments.
+- **Paper Update:** Injected the `Extended Evaluation on SOTA MARL Algorithms` section into the Overleaf LaTeX source (`main-tecs.tex`) and pushed the new figures.
+- **Response Letter Update:** Addressed reviewer concerns regarding baseline reliance by explicitly referencing these new Reciprocators results to prove ADMO's generalizability and robustness against modern reciprocal reward-sharing mechanisms.
