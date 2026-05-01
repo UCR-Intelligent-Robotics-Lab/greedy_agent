@@ -1,0 +1,35 @@
+=== Q2 Physical Step Duration (Kinematics-Grounded Estimate) ===
+NOTE: This is a kinematics-grounded analysis using TurtleBot3 manufacturer
+specifications and the paper's documented platform geometry. It is NOT
+a real-world stopwatch measurement.
+Source constants:
+TurtleBot3 Burger max linear  = 0.22 m/s   (datasheet)
+TurtleBot3 Burger max angular = 2.84 rad/s (datasheet)
+Platform                       = 185 x 75 cm  (paper Sec. IV)
+Operating speed derating       = 0.7 of nominal
+Lever actuation                = 1.5 s  (assumed)
+Door actuation                 = 1.0 s  (assumed)
+Tile size (move action)        = 0.25 m  (assumed, ER discrete grid)
+Per-step team duration (max over 4 agents per synchronous step):
+Regime: balanced (post-REFiNE)
+n_steps = 10000,  median = 13.129096 s, mean = 11.772198 s, p95 = 14.768590 s, p99 = 15.745697 s
+Regime: skewed (pre-REFiNE / EIA-monopoly)
+n_steps = 10000,  median = 12.645213 s, mean = 10.473178 s, p95 = 14.638955 s, p99 = 14.768590 s
+ALSO REPORT at full datasheet speed (derating = 1.0) as a tighter
+lower bound on duration:
+balanced median = 9.640367 s
+skewed   median = 9.151649 s
+Comparison:
+Inference (run_actor, REFiNE prime=False) median  = 0.712 ms (from inference_latency_raw.npz, refine_normal)
+Physical step median (balanced) = 13.129096 s
+Ratio = 1.845e+04 (physical / inference); inference is ~4.27 orders of magnitude below step duration (by time)
+
+=== Sensitivity (median team-step duration, seconds) ===
+Halved actuation (T_LEVER_ACTUATE=0.75 s, T_DOOR_ACTUATE=0.5 s), derating=0.7:
+  balanced median = 12.379096 s, skewed median = 12.145213 s
+Doubled actuation (T_LEVER_ACTUATE=3.0 s, T_DOOR_ACTUATE=2.0 s), derating=0.7:
+  balanced median = 14.629096 s, skewed median = 13.645213 s
+Datasheet speed (derating=1.0), default actuation:
+  balanced median = 9.640367 s, skewed median = 9.151649 s
+Most aggressive (smallest) physical median among sensitivity cases: 9.151649 s
+vs inference median 0.000712 s → factor 1.286e+04 (target: physical at least 100× inference)

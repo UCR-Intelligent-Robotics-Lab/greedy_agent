@@ -1,0 +1,1 @@
+No results/*/log.csv found under repo root. No per-step wall-clock timestamps available; time the next real-world run manually.

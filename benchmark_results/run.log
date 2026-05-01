@@ -1,0 +1,51 @@
+WARNING:tensorflow:From /home/yifan/miniconda3/envs/REFINE_nano/lib/python3.10/site-packages/tensorflow/python/compat/v2_compat.py:98: disable_resource_variables (from tensorflow.python.ops.resource_variables_toggle) is deprecated and will be removed in a future version.
+Instructions for updating:
+non-resource variables are not supported in the long term
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+Users of this version of Gym should be able to simply replace 'import gym' with 'import gymnasium as gym' in the vast majority of cases.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+WARNING:tensorflow:From /home/yifan/miniconda3/envs/REFINE_nano/lib/python3.10/site-packages/tensorflow/python/util/dispatch.py:1264: multinomial (from tensorflow.python.ops.random_ops) is deprecated and will be removed in a future version.
+Instructions for updating:
+Use `tf.random.categorical` instead.
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1777600005.351521   61572 mlir_graph_optimization_pass.cc:437] MLIR V1 optimization pass is not enabled
+Initializing LIO agent agent_0 with energy_param: 1.0
+Initializing LIO agent agent_1 with energy_param: 1.0
+Initializing LIO agent agent_2 with energy_param: 1.0
+Initializing LIO agent agent_3 with energy_param: 1.0
+Initializing REFiNE agent agent_0 with energy_param: 1.0
+Initializing REFiNE agent agent_1 with energy_param: 1.0
+Initializing REFiNE agent agent_2 with energy_param: 1.0
+Initializing REFiNE agent agent_3 with energy_param: 1.0
+Initializing LIO agent agent_0 with energy_param: 1.0
+Initializing LIO agent agent_1 with energy_param: 1.0
+Initializing LIO agent agent_2 with energy_param: 1.0
+Initializing LIO agent agent_3 with energy_param: 1.0
+Initializing REFiNE agent agent_0 with energy_param: 1.0
+Initializing REFiNE agent agent_1 with energy_param: 1.0
+Initializing REFiNE agent agent_2 with energy_param: 1.0
+Initializing REFiNE agent agent_3 with energy_param: 1.0
+=== Q2 Empirical Summary ===
+Hardware: Orin Nano, JetPack 6.x (L4T R36 family), Cuda compilation tools, release 12.6, V12.6.68
+Tegra: # R36 (release), REVISION: 4.3, GCID: 38968081, BOARD: generic, EABI: aarch64, DATE: Wed Jan  8 01:49:37 UTC 2025
+Network: 64-32 actor MLP, N=4 agents, ER(4,2) observations (l_obs=15)
+Inference (run_actor, deployment path, prime=False):
+LIO:    mean = 815.169 us, median = 696.912 us, p99 = 2810.340 us  (n=10000)
+REFiNE: mean = 853.762 us, median = 711.744 us, p99 = 3055.148 us  (n=10000)
+Paired difference (mean): 38.593 us (4.734%), Welch t-test p = 9.382e-10
+Incentive computation (give_reward):
+LIO:    mean = 929.651 us  (n=5000)
+REFiNE: mean = 819.987 us  (n=5000)
+Paired difference (mean): -109.665 us, Welch p = 6.54e-38
+Training episode breakdown (n=30 episodes, mean values):
+Stage              | LIO (ms)  | REFiNE (ms) | delta (ms)
+rollout            |   68.4608 |     71.1737 |     2.7129
+fairness_compute   |    0.0000 |      0.3983 |     0.3983
+policy_update      |   61.7677 |     76.5409 |    14.7732
+reward_update      |  215.6676 |    217.9529 |     2.2853
+total_episode      |  413.0370 |    438.7939 |    25.7569
+Deployment cadence: No results/*/log.csv found under repo root. No per-step wall-clock timestamps available; time the next real-world run manually.
+
+Stages: A/B LIO=True REFiNE=True, C LIO=True REFiNE=True
+Written under: /home/yifan/greedy_agent/benchmark_results
