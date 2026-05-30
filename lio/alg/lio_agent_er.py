@@ -22,7 +22,7 @@ class LIO(object):
         self.n_agents = n_agents
         self.agent_id = agent_id
         self.energy_param = energy_param  # New parameter for energy
-        self.min_at_lever = 2 # Minimum agents needed to pull lever for ER(4,2) case
+        self.min_at_lever = config.min_at_lever if 'min_at_lever' in config else 2
         self.n_agents = n_agents  
         # Add tracking for incentives given per episode
         self.episode_incentives_given = 0.0

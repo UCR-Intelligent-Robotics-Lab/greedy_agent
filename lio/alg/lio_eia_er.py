@@ -23,7 +23,7 @@ class ExploitativeLIO(object):
         self.n_agents = n_agents
         self.agent_id = agent_id
         self.energy_param = energy_param  # New parameter for energy
-        self.min_at_lever = 2 # Minimum agents needed to pull lever for ER(4,2) case
+        self.min_at_lever = config.min_at_lever if 'min_at_lever' in config else 2
         self.n_agents = n_agents  
         # Add tracking for incentives given per episode
         self.episode_incentives_given = 0.0
@@ -49,9 +49,14 @@ class ExploitativeLIO(object):
 
         assert not (self.separate_cost_optimizer and self.include_cost_in_chain_rule)
 
+        # EIA attack weights (injected by orchestrator; defaults = canonical attack from docstring)
+        self.eia_w_lever = config.eia_w_lever if 'eia_w_lever' in config else 2.0
+        self.eia_w_door  = config.eia_w_door  if 'eia_w_door'  in config else 0.2
+
         self.create_networks()
         self.policy_new = PolicyNew
-        print(f"Initializing LIO exploitative agent {self.agent_name} with weight pair (2.0, 0.2)")
+        print(f"Initializing EIA agent {self.agent_name} with weights "
+              f"(lever={self.eia_w_lever}, door={self.eia_w_door})")
 
 
     def get_num_at_lever(self, state):
@@ -231,13 +236,12 @@ class ExploitativeLIO(object):
         # - Low rewards for door actions
         # - Ignore own position
 
-        # test different eia weights
         for i, action in enumerate(action_all):
             if i != self.agent_id:
-                if action == 0:  # Lever pulling
-                    reward[i] = 2.0 * reward[i]  # Amplify rewards for work
-                elif action == 2:  # Door
-                    reward[i] = 0.2 * reward[i]  # Minimize rewards for competing action
+                if action == 0:    # Lever pulling
+                    reward[i] = self.eia_w_lever * reward[i]
+                elif action == 2:  # Door opening
+                    reward[i] = self.eia_w_door * reward[i]
         
         reward = reward.flatten() * self.r_multiplier 
      
