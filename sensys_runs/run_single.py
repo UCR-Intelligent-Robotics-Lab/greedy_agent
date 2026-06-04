@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-"""Launch one LIO / LIO+EIA training run in an isolated process."""
+"""Launch one LIO / REFiNE training run in an isolated process."""
 from __future__ import annotations
 
 import argparse
+import importlib
 import json
 import os
 import platform as platform_mod
@@ -18,13 +19,28 @@ from typing import Any
 REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 LIO_ALG = os.path.join(REPO_ROOT, "lio", "alg")
 
+ER_METHODS = ("lio_er", "lio_eia_er", "refine_er", "refine_eia_er")
+EIA_ER_METHODS = ("lio_eia_er", "refine_eia_er")
+
+# method -> (config module basename, train module basename)
+METHOD_MAP: dict[str, tuple[str, str]] = {
+    "lio_er": ("config_room_lio", "train_lio_er"),
+    "lio_eia_er": ("config_room_lio", "train_lio_eia_er"),
+    "lio_ipd": ("config_ipd_lio", "train_lio_ipd"),
+    "lio_eia_ipd": ("config_ipd_lio", "train_lio_eia_ipd"),
+    "refine_er": ("config_room_REFiNE", "train_REFiNE_er"),
+    "refine_eia_er": ("config_room_REFiNE", "train_REFiNE_eia_er"),
+    "refine_ipd": ("config_ipd_REFiNE", "train_REFiNE_ipd"),
+    "refine_eia_ipd": ("config_ipd_REFiNE", "train_REFiNE_eia_ipd"),
+}
+
 
 def _parse_args() -> argparse.Namespace:
-    p = argparse.ArgumentParser(description="Run a single LIO baseline training job.")
+    p = argparse.ArgumentParser(description="Run a single LIO / REFiNE training job.")
     p.add_argument(
         "--method",
         required=True,
-        choices=["lio_er", "lio_eia_er", "lio_ipd", "lio_eia_ipd"],
+        choices=list(METHOD_MAP),
     )
     p.add_argument("--exp_name", required=True)
     p.add_argument("--dir_name", required=True)
@@ -38,6 +54,14 @@ def _parse_args() -> argparse.Namespace:
     p.add_argument("--min_at_lever", type=int, default=None)
     p.add_argument("--w_lever", type=float, default=None)
     p.add_argument("--w_door", type=float, default=None)
+    p.add_argument("--fairness_mult", type=float, default=None)
+    p.add_argument("--energy_weight", type=float, default=None)
+    p.add_argument(
+        "--fairness_clip",
+        action="store_true",
+        default=False,
+        help="Clip per-agent fairness coef g_i to be non-negative (REFiNE only)",
+    )
     p.add_argument("--use_gpu", action="store_true", default=False)
     return p.parse_args()
 
@@ -118,12 +142,17 @@ def _write_provenance(
         "use_gpu": bool(cfg.main.use_gpu),
         "threads": args.threads,
     }
-    if args.method in ("lio_er", "lio_eia_er"):
+    if args.method in ER_METHODS:
         record["n_agents"] = int(cfg.env.n_agents)
         record["min_at_lever"] = int(cfg.env.min_at_lever)
-    if args.method == "lio_eia_er":
+    if args.method in EIA_ER_METHODS:
         record["eia_w_lever"] = getattr(cfg.lio, "eia_w_lever", None)
         record["eia_w_door"] = getattr(cfg.lio, "eia_w_door", None)
+    if args.method.startswith("refine_"):
+        record["fairness_mult"] = getattr(cfg.lio, "Fairness_multiplier", None)
+        if args.method in ("refine_er", "refine_eia_er"):
+            record["energy_weight"] = getattr(cfg.lio, "energy_weight", None)
+        record["fairness_clip"] = bool(getattr(cfg.lio, "fairness_clip", False))
 
     try:
         with open(os.path.join(log_path, "provenance.json"), "w", encoding="utf-8") as f:
@@ -157,26 +186,11 @@ def main() -> None:
     tf_version = getattr(tf, "__version__", str(tf))
     np_version = np.__version__
 
-    if args.method == "lio_er":
-        from lio.alg import config_room_lio
-        from lio.alg.train_lio_er import train
-
-        cfg = config_room_lio.get_config()
-    elif args.method == "lio_eia_er":
-        from lio.alg import config_room_lio
-        from lio.alg.train_lio_eia_er import train
-
-        cfg = config_room_lio.get_config()
-    elif args.method == "lio_ipd":
-        from lio.alg import config_ipd_lio
-        from lio.alg.train_lio_ipd import train
-
-        cfg = config_ipd_lio.get_config()
-    else:
-        from lio.alg import config_ipd_lio
-        from lio.alg.train_lio_eia_ipd import train
-
-        cfg = config_ipd_lio.get_config()
+    config_mod_name, train_mod_name = METHOD_MAP[args.method]
+    config_mod = importlib.import_module(f"lio.alg.{config_mod_name}")
+    train_mod = importlib.import_module(f"lio.alg.{train_mod_name}")
+    cfg = config_mod.get_config()
+    train = train_mod.train
 
     cfg.main.exp_name = args.exp_name
     cfg.main.dir_name = args.dir_name
@@ -190,31 +204,48 @@ def main() -> None:
     if args.period is not None:
         cfg.alg.period = args.period
 
-    if args.method in ("lio_er", "lio_eia_er"):
+    if args.method in ER_METHODS:
         if args.n_agents is not None:
             cfg.env.n_agents = args.n_agents
         if args.min_at_lever is not None:
             cfg.env.min_at_lever = args.min_at_lever
             cfg.lio.min_at_lever = args.min_at_lever
 
-    if args.method == "lio_eia_er":
+    if args.method in EIA_ER_METHODS:
         if args.w_lever is not None:
             cfg.lio.eia_w_lever = args.w_lever
         if args.w_door is not None:
             cfg.lio.eia_w_door = args.w_door
+
+    if args.method.startswith("refine_"):
+        if args.fairness_mult is not None:
+            cfg.lio.Fairness_multiplier = args.fairness_mult
+        if args.energy_weight is not None and args.method in (
+            "refine_er",
+            "refine_eia_er",
+        ):
+            cfg.lio.energy_weight = args.energy_weight
+        if args.fairness_clip:
+            cfg.lio.fairness_clip = True
 
     log_path = os.path.join(REPO_ROOT, "lio", "results", args.exp_name, args.dir_name)
     os.makedirs(log_path, exist_ok=True)
     _write_provenance(log_path, args, cfg, tf_version, np_version)
 
     extra = []
-    if args.method in ("lio_er", "lio_eia_er"):
+    if args.method in ER_METHODS:
         extra.append(f"n_agents={cfg.env.n_agents} min_at_lever={cfg.env.min_at_lever}")
-    if args.method == "lio_eia_er":
+    if args.method in EIA_ER_METHODS:
         wl = getattr(cfg.lio, "eia_w_lever", None)
         wd = getattr(cfg.lio, "eia_w_door", None)
         if wl is not None:
             extra.append(f"w_lever={wl} w_door={wd}")
+    if args.method.startswith("refine_"):
+        extra.append(f"Fairness_multiplier={cfg.lio.Fairness_multiplier}")
+        if args.method in ("refine_er", "refine_eia_er"):
+            extra.append(f"energy_weight={cfg.lio.energy_weight}")
+        if getattr(cfg.lio, "fairness_clip", False):
+            extra.append("fairness_clip=True")
 
     print(
         f"RUN {args.method} exp={args.exp_name} dir={args.dir_name} seed={args.seed} "

@@ -7,4 +7,7 @@ minilab/
 *pycache*
 \p2p_test
 
-lio/results
+lio/resultslogs_*.txt
+*.log
+.watch_state.json
+lio/results/

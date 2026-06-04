@@ -1,6 +1,4 @@
-"""Trains REFiNE agents on Iterated Prisoner’s Dilemma.
-
-The 2nd agent is attacked by eia, w_{i,j} (\text{defection}) = 2, w_{i,j} (\text{cooperation}) = 0.2, let others favor defection, hate cooperation.
+"""Trains REFiNE agents on Iterated Prisoner's Dilemma.
 
 
 """
@@ -75,7 +73,6 @@ def train(config):
         env = ipd_wrapper.IPD(config.env)
     
     from lio.alg.REFiNE_ipd import REFiNEIPD as REFiNE
-    from lio.alg.REFiNE_eia_ipd import ExploitativeREFiNEIPD as REFiNE_E
 
     # track total‐fairness per episode
     fairness_history = {}
@@ -83,15 +80,11 @@ def train(config):
     
 
     list_agents = []
-
-    # First agent normal
-    list_agents.append(REFiNE(config.lio, env.l_obs, env.l_action,config.nn, 'agent_0',config.env.r_multiplier, env.n_agents,0, 1.0))
-    
-    # Second agent exploitative
-    list_agents.append(REFiNE_E(config.lio, env.l_obs, env.l_action,config.nn, 'agent_1',config.env.r_multiplier, env.n_agents,1, 1.0))
-    
-    
-       
+    for agent_id in range(env.n_agents):
+        list_agents.append(REFiNE(config.lio, env.l_obs, env.l_action,
+                               config.nn, 'agent_%d' % agent_id,
+                               config.env.r_multiplier, env.n_agents,
+                               agent_id, 1.0))
 
      
 
@@ -430,7 +423,7 @@ if __name__ == '__main__':
 
     # always load the IPD config
     config = config_ipd_REFiNE.get_config()
-    config.main.dir_name = 'ipd_REFiNE_attack_2'
+    config.main.dir_name = 'ipd_REFiNE_2'
     config.main.exp_name = 'ipd%d'%args.num
     config.main.seed = 12340 + args.num
 

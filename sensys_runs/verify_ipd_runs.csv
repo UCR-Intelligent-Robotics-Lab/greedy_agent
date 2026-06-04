@@ -1,0 +1,51 @@
+seed_dir,run_dir,method,ablation,n_rows,expected,status,nan_inf,final_mean_env,final_reward_env_stdev,final_coop_rate,final_payoff_gap,final_fairness_var,converged,suspicious_reason,path
+nano_ipd1,ipd_eia,eia,,20,20,OK,False,-75.66666666666666,73.0,0.48666666666666664,146.0,5328.999999999999,True,,/home/yifan/greedy_agent/lio/results/nano_ipd1/ipd_eia/log.csv
+nano_ipd10,ipd_eia,eia,,20,20,OK,False,-74.66666666666666,73.0,0.5066666666666667,146.0,5328.999999999999,True,,/home/yifan/greedy_agent/lio/results/nano_ipd10/ipd_eia/log.csv
+nano_ipd2,ipd_eia,eia,,20,20,OK,False,-75.0,75.0,0.5,150.0,5625.0,True,,/home/yifan/greedy_agent/lio/results/nano_ipd2/ipd_eia/log.csv
+nano_ipd3,ipd_eia,eia,,20,20,OK,False,-75.16666666666666,74.5,0.49666666666666665,149.0,5550.249999999999,True,,/home/yifan/greedy_agent/lio/results/nano_ipd3/ipd_eia/log.csv
+nano_ipd4,ipd_eia,eia,,20,20,OK,False,-75.0,75.0,0.5,150.0,5625.0,True,,/home/yifan/greedy_agent/lio/results/nano_ipd4/ipd_eia/log.csv
+nano_ipd5,ipd_eia,eia,,20,20,OK,False,-100.0,0.0,0.0,0.0,0.0,True,,/home/yifan/greedy_agent/lio/results/nano_ipd5/ipd_eia/log.csv
+nano_ipd6,ipd_eia,eia,,20,20,OK,False,-75.16666666666666,74.5,0.49666666666666665,149.0,5550.249999999999,True,,/home/yifan/greedy_agent/lio/results/nano_ipd6/ipd_eia/log.csv
+nano_ipd7,ipd_eia,eia,,20,20,OK,False,-75.0,75.0,0.5,150.0,5625.0,True,,/home/yifan/greedy_agent/lio/results/nano_ipd7/ipd_eia/log.csv
+nano_ipd8,ipd_eia,eia,,20,20,OK,False,-75.0,75.0,0.5,150.0,5625.0,True,,/home/yifan/greedy_agent/lio/results/nano_ipd8/ipd_eia/log.csv
+nano_ipd9,ipd_eia,eia,,20,20,OK,False,-75.5,73.5,0.49,147.0,5402.25,True,,/home/yifan/greedy_agent/lio/results/nano_ipd9/ipd_eia/log.csv
+nano_ipd1,ipd_lio,lio,,20,20,OK,False,-52.5,0.5,0.9500000000000001,1.0,0.25,True,,/home/yifan/greedy_agent/lio/results/nano_ipd1/ipd_lio/log.csv
+nano_ipd10,ipd_lio,lio,,20,20,OK,False,-51.333333333333336,3.0,0.9733333333333333,6.0,9.0,True,,/home/yifan/greedy_agent/lio/results/nano_ipd10/ipd_lio/log.csv
+nano_ipd2,ipd_lio,lio,,20,20,OK,False,-50.5,0.5,0.9899999999999999,1.0,0.25,True,,/home/yifan/greedy_agent/lio/results/nano_ipd2/ipd_lio/log.csv
+nano_ipd3,ipd_lio,lio,,20,20,OK,False,-75.0,75.0,0.5,150.0,5625.0,True,,/home/yifan/greedy_agent/lio/results/nano_ipd3/ipd_lio/log.csv
+nano_ipd4,ipd_lio,lio,,20,20,OK,False,-75.0,75.0,0.5,150.0,5625.0,True,,/home/yifan/greedy_agent/lio/results/nano_ipd4/ipd_lio/log.csv
+nano_ipd5,ipd_lio,lio,,20,20,OK,False,-50.666666666666664,2.0,0.9866666666666667,4.0,4.0,True,,/home/yifan/greedy_agent/lio/results/nano_ipd5/ipd_lio/log.csv
+nano_ipd6,ipd_lio,lio,,20,20,OK,False,-100.0,0.0,0.0,0.0,0.0,True,,/home/yifan/greedy_agent/lio/results/nano_ipd6/ipd_lio/log.csv
+nano_ipd7,ipd_lio,lio,,20,20,OK,False,-75.33333333333334,74.0,0.49333333333333335,148.0,5476.000000000001,True,,/home/yifan/greedy_agent/lio/results/nano_ipd7/ipd_lio/log.csv
+nano_ipd8,ipd_lio,lio,,20,20,OK,False,-75.0,75.0,0.5,150.0,5625.0,True,,/home/yifan/greedy_agent/lio/results/nano_ipd8/ipd_lio/log.csv
+nano_ipd9,ipd_lio,lio,,20,20,OK,False,-58.83333333333333,14.499999999999996,0.8233333333333333,28.999999999999993,210.2499999999999,True,,/home/yifan/greedy_agent/lio/results/nano_ipd9/ipd_lio/log.csv
+nano_ipd1,ipd_refine,refine,,0,20,MISSING,False,,,,,,False,missing file,/home/yifan/greedy_agent/lio/results/nano_ipd1/ipd_refine/log.csv
+nano_ipd10,ipd_refine,refine,,0,20,MISSING,False,,,,,,False,missing file,/home/yifan/greedy_agent/lio/results/nano_ipd10/ipd_refine/log.csv
+nano_ipd2,ipd_refine,refine,,0,20,MISSING,False,,,,,,False,missing file,/home/yifan/greedy_agent/lio/results/nano_ipd2/ipd_refine/log.csv
+nano_ipd3,ipd_refine,refine,,0,20,MISSING,False,,,,,,False,missing file,/home/yifan/greedy_agent/lio/results/nano_ipd3/ipd_refine/log.csv
+nano_ipd4,ipd_refine,refine,,0,20,MISSING,False,,,,,,False,missing file,/home/yifan/greedy_agent/lio/results/nano_ipd4/ipd_refine/log.csv
+nano_ipd5,ipd_refine,refine,,0,20,MISSING,False,,,,,,False,missing file,/home/yifan/greedy_agent/lio/results/nano_ipd5/ipd_refine/log.csv
+nano_ipd6,ipd_refine,refine,,0,20,MISSING,False,,,,,,False,missing file,/home/yifan/greedy_agent/lio/results/nano_ipd6/ipd_refine/log.csv
+nano_ipd7,ipd_refine,refine,,0,20,MISSING,False,,,,,,False,missing file,/home/yifan/greedy_agent/lio/results/nano_ipd7/ipd_refine/log.csv
+nano_ipd8,ipd_refine,refine,,0,20,MISSING,False,,,,,,False,missing file,/home/yifan/greedy_agent/lio/results/nano_ipd8/ipd_refine/log.csv
+nano_ipd9,ipd_refine,refine,,0,20,MISSING,False,,,,,,False,missing file,/home/yifan/greedy_agent/lio/results/nano_ipd9/ipd_refine/log.csv
+nano_ipd1,ipd_refine_eia,refine_eia,,0,20,MISSING,False,,,,,,False,missing file,/home/yifan/greedy_agent/lio/results/nano_ipd1/ipd_refine_eia/log.csv
+nano_ipd10,ipd_refine_eia,refine_eia,,0,20,MISSING,False,,,,,,False,missing file,/home/yifan/greedy_agent/lio/results/nano_ipd10/ipd_refine_eia/log.csv
+nano_ipd2,ipd_refine_eia,refine_eia,,0,20,MISSING,False,,,,,,False,missing file,/home/yifan/greedy_agent/lio/results/nano_ipd2/ipd_refine_eia/log.csv
+nano_ipd3,ipd_refine_eia,refine_eia,,0,20,MISSING,False,,,,,,False,missing file,/home/yifan/greedy_agent/lio/results/nano_ipd3/ipd_refine_eia/log.csv
+nano_ipd4,ipd_refine_eia,refine_eia,,0,20,MISSING,False,,,,,,False,missing file,/home/yifan/greedy_agent/lio/results/nano_ipd4/ipd_refine_eia/log.csv
+nano_ipd5,ipd_refine_eia,refine_eia,,0,20,MISSING,False,,,,,,False,missing file,/home/yifan/greedy_agent/lio/results/nano_ipd5/ipd_refine_eia/log.csv
+nano_ipd6,ipd_refine_eia,refine_eia,,0,20,MISSING,False,,,,,,False,missing file,/home/yifan/greedy_agent/lio/results/nano_ipd6/ipd_refine_eia/log.csv
+nano_ipd7,ipd_refine_eia,refine_eia,,0,20,MISSING,False,,,,,,False,missing file,/home/yifan/greedy_agent/lio/results/nano_ipd7/ipd_refine_eia/log.csv
+nano_ipd8,ipd_refine_eia,refine_eia,,0,20,MISSING,False,,,,,,False,missing file,/home/yifan/greedy_agent/lio/results/nano_ipd8/ipd_refine_eia/log.csv
+nano_ipd9,ipd_refine_eia,refine_eia,,0,20,MISSING,False,,,,,,False,missing file,/home/yifan/greedy_agent/lio/results/nano_ipd9/ipd_refine_eia/log.csv
+nano_ipd1,ipd_refine_eia_B0,refine_eia,B0,0,20,MISSING,False,,,,,,False,missing file,/home/yifan/greedy_agent/lio/results/nano_ipd1/ipd_refine_eia_B0/log.csv
+nano_ipd10,ipd_refine_eia_B0,refine_eia,B0,0,20,MISSING,False,,,,,,False,missing file,/home/yifan/greedy_agent/lio/results/nano_ipd10/ipd_refine_eia_B0/log.csv
+nano_ipd2,ipd_refine_eia_B0,refine_eia,B0,0,20,MISSING,False,,,,,,False,missing file,/home/yifan/greedy_agent/lio/results/nano_ipd2/ipd_refine_eia_B0/log.csv
+nano_ipd3,ipd_refine_eia_B0,refine_eia,B0,0,20,MISSING,False,,,,,,False,missing file,/home/yifan/greedy_agent/lio/results/nano_ipd3/ipd_refine_eia_B0/log.csv
+nano_ipd4,ipd_refine_eia_B0,refine_eia,B0,0,20,MISSING,False,,,,,,False,missing file,/home/yifan/greedy_agent/lio/results/nano_ipd4/ipd_refine_eia_B0/log.csv
+nano_ipd5,ipd_refine_eia_B0,refine_eia,B0,0,20,MISSING,False,,,,,,False,missing file,/home/yifan/greedy_agent/lio/results/nano_ipd5/ipd_refine_eia_B0/log.csv
+nano_ipd6,ipd_refine_eia_B0,refine_eia,B0,0,20,MISSING,False,,,,,,False,missing file,/home/yifan/greedy_agent/lio/results/nano_ipd6/ipd_refine_eia_B0/log.csv
+nano_ipd7,ipd_refine_eia_B0,refine_eia,B0,0,20,MISSING,False,,,,,,False,missing file,/home/yifan/greedy_agent/lio/results/nano_ipd7/ipd_refine_eia_B0/log.csv
+nano_ipd8,ipd_refine_eia_B0,refine_eia,B0,0,20,MISSING,False,,,,,,False,missing file,/home/yifan/greedy_agent/lio/results/nano_ipd8/ipd_refine_eia_B0/log.csv
+nano_ipd9,ipd_refine_eia_B0,refine_eia,B0,0,20,MISSING,False,,,,,,False,missing file,/home/yifan/greedy_agent/lio/results/nano_ipd9/ipd_refine_eia_B0/log.csv

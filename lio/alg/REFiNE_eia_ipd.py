@@ -158,13 +158,11 @@ class ExploitativeREFiNEIPD(object):
         # total energy penalty (scalar per episode)
         # self.energy_penalty = tf.placeholder(tf.float32, None, 'energy_penalty')
         
-        # total fairness term (scalar per episode)
-        self.fairness = tf.placeholder(tf.float32, shape=(),name='fairness')
+        # per-agent fairness gradient scalar g_i (episode-level)
+        self.fairness_coef = tf.placeholder(
+            tf.float32, shape=(), name='fairness_coef')
 
-        # distribute episode‐wide fairness evenly across steps
-        steps = tf.cast(tf.shape(self.r_ext)[0], tf.float32)
-        r2 = self.r_ext \
-            +    self.fairness_amplifier * self.fairness     /steps
+        r2 = self.r_ext * (1.0 + self.fairness_amplifier * self.fairness_coef)
         this_agent_1hot = tf.one_hot(indices=self.agent_id, depth=self.n_agents)
         for other_id in self.list_other_id:
             r2 += self.r_multiplier * tf.reduce_sum(
@@ -201,8 +199,13 @@ class ExploitativeREFiNEIPD(object):
         self.policy_op = self.policy_opt.apply_gradients(grads_and_vars)
 
     def create_update_op(self):
+        if not hasattr(self, 'fairness_coef'):
+            self.fairness_coef = tf.placeholder(
+                tf.float32, shape=(), name='fairness_coef')
+
         self.r_from_others = tf.placeholder(tf.float32, [None], 'r_from_others')
-        r2_val = self.r_ext + self.r_from_others
+        r2_val = self.r_ext * (1.0 + self.fairness_amplifier * self.fairness_coef) \
+                 + self.r_from_others
         if self.include_cost_in_chain_rule:
             self.r_given = tf.placeholder(tf.float32, [None], 'r_given')
             r2_val -= self.r_given
@@ -275,7 +278,7 @@ class ExploitativeREFiNEIPD(object):
         if self.separate_cost_optimizer:
             self.cost_op = cost_opt.minimize(total_given)
 
-    def update(self, sess, buf, epsilon, fairness):
+    def update(self, sess, buf, epsilon, fairness_coef):
         sess.run(self.list_copy_main_to_prime_ops)
 
         n_steps = len(buf.obs)
@@ -302,9 +305,7 @@ class ExploitativeREFiNEIPD(object):
 
         # print(sum_r_from_other)
         feed[self.r_from_others] = sum_r_from_other
-        # plug in episode fairness
-        # feed[self.energy_penalty] = energy_penalty
-        feed[self.fairness] = fairness
+        feed[self.fairness_coef] = fairness_coef
        
         if self.include_cost_in_chain_rule:
             feed[self.r_given] = buf.r_given
@@ -323,8 +324,8 @@ class ExploitativeREFiNEIPD(object):
 
         for agent in self.list_of_agents:
             # Add fairness for all agents
-            if hasattr(agent, 'fairness'):
-               feed[agent.fairness] = 0.0  # Default value for training rewards
+            if hasattr(agent, 'fairness_coef'):
+               feed[agent.fairness_coef] = 0.0
                
         for agent in self.list_of_agents:
             other_id = agent.agent_id

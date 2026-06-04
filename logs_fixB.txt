@@ -1,0 +1,9 @@
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+Users of this version of Gym should be able to simply replace 'import gym' with 'import gymnasium as gym' in the vast majority of cases.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+WARNING:tensorflow:From /home/yifan/miniconda3/envs/LIO_tecs/lib/python3.10/site-packages/tensorflow/python/util/dispatch.py:1264: multinomial (from tensorflow.python.ops.random_ops) is deprecated and will be removed in a future version.
+Instructions for updating:
+Use `tf.random.categorical` instead.
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1780434884.290503 1260093 mlir_graph_optimization_pass.cc:437] MLIR V1 optimization pass is not enabled

@@ -33,6 +33,8 @@ def _parse_args() -> argparse.Namespace:
         help="Glob for per-run subprocess logs",
     )
     p.add_argument("--state", default=DEFAULT_STATE, help="Persistent state JSON path")
+    p.add_argument("--total", type=int, default=None,
+                   help="Override expected total run count (else computed from run_batch matrix)")
     return p.parse_args()
 
 
@@ -165,7 +167,7 @@ def main() -> None:
         state_path = os.path.join(REPO_ROOT, state_path)
 
     state = _load_state(state_path)
-    total = _expected_total()
+    total = args.total if args.total is not None else _expected_total()
     host = socket.gethostname()
 
     paths, complete, incomplete, max_mtime = _scan_results(args.results_glob)

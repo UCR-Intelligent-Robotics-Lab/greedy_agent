@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Batch orchestrator for SenSys LIO / LIO+EIA baseline experiments."""
+"""Batch orchestrator for SenSys LIO / REFiNE baseline experiments."""
 from __future__ import annotations
 
 import argparse
@@ -22,7 +22,19 @@ SIZES = [(3, 1), (4, 2), (6, 4)]
 SWEEP_W = [(1.1, 0.9), (1.5, 1.5)]
 DEFAULT_W = (2.0, 0.2)
 
-METHODS = ("lio_er", "lio_eia_er", "lio_ipd", "lio_eia_ipd")
+METHODS = (
+    "lio_er",
+    "lio_eia_er",
+    "lio_ipd",
+    "lio_eia_ipd",
+    "refine_er",
+    "refine_eia_er",
+    "refine_ipd",
+    "refine_eia_ipd",
+)
+
+ER_METHODS = ("lio_er", "lio_eia_er", "refine_er", "refine_eia_er")
+EIA_ER_METHODS = ("lio_eia_er", "refine_eia_er")
 
 ER_DEFAULT_EPISODES = 25000
 ER_DEFAULT_PERIOD = 500
@@ -94,9 +106,48 @@ def _count_agent_groups(header_line: str) -> int:
 
 
 def _default_episodes_period(method: str) -> tuple[int, int]:
-    if method in ("lio_er", "lio_eia_er"):
+    if method in ER_METHODS:
         return ER_DEFAULT_EPISODES, ER_DEFAULT_PERIOD
     return IPD_DEFAULT_EPISODES, IPD_DEFAULT_PERIOD
+
+
+def _w_dir_tag(wl: float, wd: float) -> str:
+    return f"w{wl}-{wd}"
+
+
+def _add_refine_eia_er_specs(
+    add,
+    *,
+    n: int,
+    min_lev: int,
+    wl: float,
+    wd: float,
+    n_seeds: int,
+    plat: str,
+) -> None:
+    wtag = _w_dir_tag(wl, wd)
+    prefix = f"er_refine_eia_{n}_{min_lev}_{wtag}"
+    base = dict(
+        method="refine_eia_er",
+        n_agents=n,
+        min_at_lever=min_lev,
+        w_lever=wl,
+        w_door=wd,
+    )
+    variants = [
+        (prefix, {}),
+        (f"{prefix}_B0", {"fairness_mult": 0.0}),
+        (f"{prefix}_beta0", {"energy_weight": 0.0}),
+    ]
+    for s in range(1, n_seeds + 1):
+        for dir_name, overrides in variants:
+            add(
+                **base,
+                exp_name=_er_exp_name(s, plat),
+                dir_name=dir_name,
+                seed=_seed(s),
+                **overrides,
+            )
 
 
 def expected_data_rows(spec: dict[str, Any]) -> int:
@@ -162,6 +213,28 @@ def build_matrix(
                 add(**base, dir_name="smoke_lio", n_eval=2)
             elif fam == "lio_eia_ipd":
                 add(**base, dir_name="smoke_eia", n_eval=2)
+            elif fam == "refine_er":
+                add(
+                    **base,
+                    dir_name="smoke_refine_3_1",
+                    n_agents=3,
+                    min_at_lever=1,
+                    n_eval=3,
+                )
+            elif fam == "refine_eia_er":
+                add(
+                    **base,
+                    dir_name="smoke_refine_eia_4_2_w2.0-0.2",
+                    n_agents=4,
+                    min_at_lever=2,
+                    w_lever=2.0,
+                    w_door=0.2,
+                    n_eval=4,
+                )
+            elif fam == "refine_ipd":
+                add(**base, dir_name="smoke_refine", n_eval=2)
+            elif fam == "refine_eia_ipd":
+                add(**base, dir_name="smoke_refine_eia", n_eval=2)
         return specs
 
     if mode == "preflight":
@@ -208,6 +281,52 @@ def build_matrix(
                     method=fam,
                     exp_name="preflight_lio_eia_ipd",
                     dir_name="preflight_eia",
+                    seed=_seed(1),
+                    n_episodes=1000,
+                    period=1000,
+                    n_eval=10,
+                )
+            elif fam == "refine_er":
+                add(
+                    method=fam,
+                    exp_name="preflight_refine_er",
+                    dir_name="preflight_refine_6_4",
+                    seed=_seed(1),
+                    n_agents=6,
+                    min_at_lever=4,
+                    n_episodes=600,
+                    period=500,
+                    n_eval=10,
+                )
+            elif fam == "refine_eia_er":
+                add(
+                    method=fam,
+                    exp_name="preflight_refine_eia_er",
+                    dir_name="preflight_refine_eia_6_4_w2.0-0.2",
+                    seed=_seed(1),
+                    n_agents=6,
+                    min_at_lever=4,
+                    w_lever=2.0,
+                    w_door=0.2,
+                    n_episodes=600,
+                    period=500,
+                    n_eval=10,
+                )
+            elif fam == "refine_ipd":
+                add(
+                    method=fam,
+                    exp_name="preflight_refine_ipd",
+                    dir_name="preflight_refine",
+                    seed=_seed(1),
+                    n_episodes=1000,
+                    period=1000,
+                    n_eval=10,
+                )
+            elif fam == "refine_eia_ipd":
+                add(
+                    method=fam,
+                    exp_name="preflight_refine_eia_ipd",
+                    dir_name="preflight_refine_eia",
                     seed=_seed(1),
                     n_episodes=1000,
                     period=1000,
@@ -271,12 +390,72 @@ def build_matrix(
                     dir_name="ipd_eia",
                     seed=_seed(s),
                 )
+        elif m == "refine_er":
+            for n, min_lev in SIZES:
+                for s in range(1, n_seeds + 1):
+                    add(
+                        method=m,
+                        exp_name=_er_exp_name(s, plat),
+                        dir_name=f"er_refine_{n}_{min_lev}",
+                        n_agents=n,
+                        min_at_lever=min_lev,
+                        seed=_seed(s),
+                    )
+        elif m == "refine_eia_er":
+            wl, wd = DEFAULT_W
+            for n, min_lev in SIZES:
+                _add_refine_eia_er_specs(
+                    add,
+                    n=n,
+                    min_lev=min_lev,
+                    wl=wl,
+                    wd=wd,
+                    n_seeds=n_seeds,
+                    plat=plat,
+                )
+            for wl, wd in SWEEP_W:
+                _add_refine_eia_er_specs(
+                    add,
+                    n=4,
+                    min_lev=2,
+                    wl=wl,
+                    wd=wd,
+                    n_seeds=n_seeds,
+                    plat=plat,
+                )
+        elif m == "refine_ipd":
+            for s in range(1, n_seeds + 1):
+                add(
+                    method=m,
+                    exp_name=_ipd_exp_name(s, plat),
+                    dir_name="ipd_refine",
+                    seed=_seed(s),
+                )
+        elif m == "refine_eia_ipd":
+            for s in range(1, n_seeds + 1):
+                add(
+                    method=m,
+                    exp_name=_ipd_exp_name(s, plat),
+                    dir_name="ipd_refine_eia",
+                    seed=_seed(s),
+                )
+                add(
+                    method=m,
+                    exp_name=_ipd_exp_name(s, plat),
+                    dir_name="ipd_refine_eia_B0",
+                    fairness_mult=0.0,
+                    seed=_seed(s),
+                )
 
     return specs
 
 
 def spec_to_argv(
-    spec: dict[str, Any], use_gpu: bool, threads: int, platform: str
+    spec: dict[str, Any],
+    use_gpu: bool,
+    threads: int,
+    platform: str,
+    fairness_clip: bool = False,
 ) -> list[str]:
     cmd = [
         sys.executable,
@@ -297,9 +476,11 @@ def spec_to_argv(
     for key in ("n_episodes", "n_eval", "period", "n_agents", "min_at_lever"):
         if key in spec:
             cmd.extend([f"--{key}", str(spec[key])])
-    for key in ("w_lever", "w_door"):
+    for key in ("w_lever", "w_door", "fairness_mult", "energy_weight"):
         if key in spec:
             cmd.extend([f"--{key}", str(spec[key])])
+    if spec.get("fairness_clip") or fairness_clip:
+        cmd.append("--fairness_clip")
     if use_gpu:
         cmd.append("--use_gpu")
     return cmd
@@ -347,7 +528,7 @@ def validate_run(spec: dict[str, Any], exit_code: int) -> list[str]:
     method = spec["method"]
     n_agents = spec.get("n_agents", 2)
 
-    if method in ("lio_er", "lio_eia_er"):
+    if method in ER_METHODS:
         expected = _er_header(n_agents)
     else:
         expected = _ipd_header(n_agents)
@@ -382,7 +563,7 @@ def validate_run(spec: dict[str, Any], exit_code: int) -> list[str]:
     with open(cfg_path, encoding="utf-8") as f:
         cfg = json.load(f)
 
-    if method in ("lio_er", "lio_eia_er"):
+    if method in ER_METHODS:
         n = spec["n_agents"]
         m = spec["min_at_lever"]
         if cfg.get("env", {}).get("n_agents") != n:
@@ -391,11 +572,18 @@ def validate_run(spec: dict[str, Any], exit_code: int) -> list[str]:
             errors.append(f"{label}: config env.min_at_lever != {m}")
         if cfg.get("lio", {}).get("min_at_lever") != m:
             errors.append(f"{label}: config lio.min_at_lever != {m}")
-        if method == "lio_eia_er":
+        if method in EIA_ER_METHODS:
             if cfg.get("lio", {}).get("eia_w_lever") != spec.get("w_lever"):
                 errors.append(f"{label}: config lio.eia_w_lever mismatch")
             if cfg.get("lio", {}).get("eia_w_door") != spec.get("w_door"):
                 errors.append(f"{label}: config lio.eia_w_door mismatch")
+        if method.startswith("refine_"):
+            if "fairness_mult" in spec:
+                if cfg.get("lio", {}).get("Fairness_multiplier") != spec["fairness_mult"]:
+                    errors.append(f"{label}: config lio.Fairness_multiplier mismatch")
+            if "energy_weight" in spec:
+                if cfg.get("lio", {}).get("energy_weight") != spec["energy_weight"]:
+                    errors.append(f"{label}: config lio.energy_weight mismatch")
 
     return errors
 
@@ -407,10 +595,11 @@ def run_one(
     platform: str,
     validate: bool,
     run_timeout: int | None,
+    fairness_clip: bool = False,
 ) -> tuple[dict[str, Any], str, int, list[str]]:
     """Returns (spec, status, exit_code, validation_errors). status in ok|fail|timeout."""
     os.makedirs(RUN_LOGS_DIR, exist_ok=True)
-    cmd = spec_to_argv(spec, use_gpu, threads, platform)
+    cmd = spec_to_argv(spec, use_gpu, threads, platform, fairness_clip)
     log_path = _log_path(spec)
     exit_code = 0
     status = "ok"
@@ -471,7 +660,17 @@ def _print_spec_table(specs: list[dict[str, Any]], platform: str) -> None:
             spec["dir_name"],
             f"seed={spec['seed']}",
         ]
-        for k in ("n_agents", "min_at_lever", "w_lever", "w_door", "n_episodes", "period", "n_eval"):
+        for k in (
+            "n_agents",
+            "min_at_lever",
+            "w_lever",
+            "w_door",
+            "fairness_mult",
+            "energy_weight",
+            "n_episodes",
+            "period",
+            "n_eval",
+        ):
             if k in spec:
                 parts.append(f"{k}={spec[k]}")
         print("  ".join(str(p) for p in parts))
@@ -482,7 +681,17 @@ def main() -> None:
     parser.add_argument(
         "--method",
         required=True,
-        choices=["lio_er", "lio_eia_er", "lio_ipd", "lio_eia_ipd", "all"],
+        choices=[
+            "lio_er",
+            "lio_eia_er",
+            "lio_ipd",
+            "lio_eia_ipd",
+            "refine_er",
+            "refine_eia_er",
+            "refine_ipd",
+            "refine_eia_ipd",
+            "all",
+        ],
     )
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument("--smoke", action="store_true")
@@ -508,6 +717,12 @@ def main() -> None:
         type=int,
         default=10,
         help="Number of seeds S in 1..n_seeds (seed = 12340 + S); real matrix only",
+    )
+    parser.add_argument(
+        "--fairness_clip",
+        action="store_true",
+        default=False,
+        help="Pass --fairness_clip to run_single for all runs in this batch",
     )
     args = parser.parse_args()
 
@@ -571,6 +786,7 @@ def main() -> None:
                     args.platform,
                     validate,
                     args.run_timeout,
+                    args.fairness_clip,
                 ): spec
                 for spec in to_run
             }

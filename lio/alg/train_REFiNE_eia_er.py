@@ -207,41 +207,24 @@ def train(config):
                 agent.train_opp_model(sess, list_buffers,
                                       epsilon)
 
-        # compute total‐fairness F_T for this episode
         n_agents = env.n_agents
         n_steps  = len(list_buffers[0].obs)
-        eps      = config.lio.eps
-        fair_ts  = []
-        F_multiplier = config.lio.Fairness_multiplier
-        gamma = config.lio.gamma
-         
-           
-        for t in range(n_steps):
-            # R_i(t) = env‐reward + incentives from others
-            # build R_i(t) for *every* agent i
-            R = np.array([ list_buffers[i].reward[t] + np.sum(list_buffers[i].r_from_others[t][:,i])
-                       for i in range(n_agents) ])
-            num = R.sum()
-            den = n_agents * np.sum(R**2) + eps
-            f_t = (num * num) / den
-            fair_ts.append((gamma**t)*f_t)
-            
-        # discounted-average normalization
-        sum_weights = sum(gamma**t for t in range(n_steps))
-        F_T = (sum(fair_ts) / sum_weights) 
-        BF_T = F_multiplier * F_T   
-        #print(f"Policy Training Episode {idx_episode}: total fairness = {F_T:.6f}")
-        #print(f"Policy Training Episode {idx_episode}: enlarged total fairness = {BF_T:.6f}")
-        fairness_history[idx_episode] = BF_T
-        
-        # now call update with energy & fairness, update every agent
+        gamma    = config.lio.gamma
+        # cumulative discounted ENV-only return per agent (list_buffers[i].reward is env reward;
+        # r_from_others is incentives and is intentionally excluded so fairness targets task load)
+        J_env = np.array([
+            sum((gamma ** t) * list_buffers[i].reward[t] for t in range(n_steps))
+            for i in range(n_agents)
+        ])
+        Jbar = J_env.mean()
+        g = -(2.0 / n_agents) * (J_env - Jbar)   # >= 0 for below-mean agents; argmin always >= 0
+        if getattr(config.lio, 'fairness_clip', False):
+            g = np.maximum(g, 0.0)
+        fairness_history[idx_episode] = float(J_env.var())
+
         for agent in list_agents:
            buf = list_buffers[agent.agent_id]
-           agent.update(sess,
-                 buf,
-                 epsilon,
-                 buf.total_energy,
-                 F_T)
+           agent.update(sess, buf, epsilon, buf.total_energy, float(g[agent.agent_id]))
 
 
 

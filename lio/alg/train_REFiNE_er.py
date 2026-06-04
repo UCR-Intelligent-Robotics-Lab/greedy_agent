@@ -1,6 +1,4 @@
-"""Trains REFiNE agents on Iterated Prisoner’s Dilemma.
-
-The 2nd agent is attacked by eia, w_{i,j} (\text{defection}) = 2, w_{i,j} (\text{cooperation}) = 0.2, let others favor defection, hate cooperation.
+"""Trains REFiNE agents on Escape Room game.
 
 
 """
@@ -27,7 +25,7 @@ import lio.utils.util as util
 
 
 
-from lio.alg import config_ipd_REFiNE
+from lio.alg import config_ipd_lio
 from lio.alg import config_room_REFiNE
 from lio.alg import evaluate
 import inspect
@@ -74,8 +72,7 @@ def train(config):
     elif config.env.name == 'ipd':
         env = ipd_wrapper.IPD(config.env)
     
-    from lio.alg.REFiNE_ipd import REFiNEIPD as REFiNE
-    from lio.alg.REFiNE_eia_ipd import ExploitativeREFiNEIPD as REFiNE_E
+    from lio.alg.REFiNE_er import REFiNE
 
     # track total‐fairness per episode
     fairness_history = {}
@@ -83,14 +80,11 @@ def train(config):
     
 
     list_agents = []
-
-    # First agent normal
-    list_agents.append(REFiNE(config.lio, env.l_obs, env.l_action,config.nn, 'agent_0',config.env.r_multiplier, env.n_agents,0, 1.0))
-    
-    # Second agent exploitative
-    list_agents.append(REFiNE_E(config.lio, env.l_obs, env.l_action,config.nn, 'agent_1',config.env.r_multiplier, env.n_agents,1, 1.0))
-    
-    
+    for agent_id in range(env.n_agents):
+        list_agents.append(REFiNE(config.lio, env.l_obs, env.l_action,
+                               config.nn, 'agent_%d' % agent_id,
+                               config.env.r_multiplier, env.n_agents,
+                               agent_id, 1.0))
        
 
      
@@ -169,10 +163,10 @@ def train(config):
     if config.env.name == 'er':
         list_suffix = ['reward_total', 'reward_env', 'n_lever', 'n_door',
                    'received', 'given', 'r-lever', 'r-start', 'r-door', 
-                   'win_rate', 'total_energy', 'reward_per_energy', 'teamwork_fairness']
+                   'win_rate', 'total_energy',  'teamwork_fairness']
     elif config.env.name == 'ipd':
-         list_suffix = ['given', 'received', 'reward_env',
-                   'reward_total', 'n_c', 'n_d','teamwork_fairness']
+        list_suffix = ['given', 'received', 'reward_env',
+                   'reward_total', 'teamwork_fairness']
     for agent_id in range(1, env.n_agents + 1):
         for suffix in list_suffix:
             list_agent_meas.append('A%d_%s' % (agent_id, suffix))
@@ -207,19 +201,21 @@ def train(config):
         n_agents = env.n_agents
         n_steps  = len(list_buffers[0].obs)
         gamma    = config.lio.gamma
+        # cumulative discounted ENV-only return per agent (list_buffers[i].reward is env reward;
+        # r_from_others is incentives and is intentionally excluded so fairness targets task load)
         J_env = np.array([
             sum((gamma ** t) * list_buffers[i].reward[t] for t in range(n_steps))
             for i in range(n_agents)
         ])
         Jbar = J_env.mean()
-        g = -(2.0 / n_agents) * (J_env - Jbar)
+        g = -(2.0 / n_agents) * (J_env - Jbar)   # >= 0 for below-mean agents; argmin always >= 0
         if getattr(config.lio, 'fairness_clip', False):
             g = np.maximum(g, 0.0)
         fairness_history[idx_episode] = float(J_env.var())
 
         for agent in list_agents:
            buf = list_buffers[agent.agent_id]
-           agent.update(sess, buf, epsilon, float(g[agent.agent_id]))
+           agent.update(sess, buf, epsilon, buf.total_energy, float(g[agent.agent_id]))
 
 
 
@@ -253,38 +249,28 @@ def train(config):
                
                (reward_total, rewards_env, n_move_lever, n_move_door, rewards_received,
                 rewards_given, steps_per_episode, r_lever, r_start, r_door,
-                win_rate, cumulative_energy, reward_per_energy, teamwork_fairness) = evaluate.test_room_symmetric(
+                win_rate, cumulative_energy, teamwork_fairness) = evaluate.test_room_symmetric(
                     n_eval, env, sess, list_agents, 'REFiNE')
                matrix_combined = np.stack([reward_total, rewards_env, n_move_lever, n_move_door,
                              rewards_received, rewards_given,
                              r_lever, r_start, r_door, win_rate,
-                             cumulative_energy, reward_per_energy, teamwork_fairness])
+                             cumulative_energy,  teamwork_fairness])
             elif config.env.name == 'ipd':
                 (rewards_given, rewards_received, rewards_env,
-                 rewards_total, n_c, n_d, teamwork_fairness) = evaluate.test_ipd(
+                 rewards_total, teamwork_fairness) = evaluate.test_ipd(
                     n_eval, env, sess, list_agents)
-                
-               
-                
-                matrix_combined = np.stack([
-                    rewards_given, 
-                    rewards_received, 
-                    rewards_env,
-                    rewards_total, 
-                    n_c,
-                    n_d,
-                    teamwork_fairness,
-                ])
-            
+                matrix_combined = np.stack([rewards_given, rewards_received, rewards_env,
+                                  rewards_total, teamwork_fairness])
+
             s = '%d,%d,%d' % (idx_episode, step_train, step)
             for idx in range(env.n_agents):
                 s += ','
                 if config.env.name == 'er':
                     s += ('{:.3e},{:.3e},{:.3e},{:.3e},{:.3e},'
-                          '{:.3e},{:.3e},{:.3e},{:.3e},{:.3e},{:.3e},{:.3e},{:.3e}').format(
+                          '{:.3e},{:.3e},{:.3e},{:.3e},{:.3e},{:.3e},{:.3e}').format(
                           *matrix_combined[:, idx])
                 elif config.env.name == 'ipd':
-                    s += '{:.3e},{:.3e},{:.3e},{:.3e},{:.3e},{:.3e},{:.3e}'.format(
+                    s += '{:.3e},{:.3e},{:.3e},{:.3e},{:.3e},{:.3e}'.format(
                         *matrix_combined[:, idx])
             if config.env.name == 'er':
                 s += ',%.2f\n' % steps_per_episode
@@ -367,13 +353,14 @@ def run_episode(sess, env, list_agents, epsilon, prime=False):
 
         # Update buffers with transitions
         for idx, buf in enumerate(list_buffers):
+            energy_cost = list_agents[idx].calculate_energy_cost(list_obs[idx], list_actions[idx])
             buf.add([
                 list_obs[idx],  # Current observation
                 list_actions[idx],  # Action taken
                 env_rewards[idx],  # Reward received from environment
                 list_obs_next[idx],  # Next observation
                 done  # Whether the episode is done
-            ])  
+            ], energy_cost)  # Add energy consumption to buffer
             buf.add_r_from_others(total_reward_given_to_each_agent)
             buf.add_action_all(list_actions)
             if list_agents[idx].include_cost_in_chain_rule:
@@ -398,16 +385,18 @@ class Buffer(object):
         self.r_from_others = []
         self.r_given = []
         self.action_all = []
-        
+        self.energy_cost = []  # Stores energy costs per step
+        self.total_energy = 0  # Stores total energy consumed by the agent
         
 
-    def add(self, transition):
+    def add(self, transition, energy):
         self.obs.append(transition[0])
         self.action.append(transition[1])
         self.reward.append(transition[2])
         self.obs_next.append(transition[3])
         self.done.append(transition[4])
-       
+        self.energy_cost.append(energy)  # Store the energy cost
+        self.total_energy += energy # Update total energy consumed by the agent
 
     def add_r_from_others(self, r):
         self.r_from_others.append(r)
@@ -422,17 +411,23 @@ class Buffer(object):
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('exp', type=str, choices=['ipd'])
+    parser.add_argument('exp', type=str, choices=['er', 'ipd'])
     parser.add_argument('num', type=int)
 
     
     args = parser.parse_args()
 
-    # always load the IPD config
-    config = config_ipd_REFiNE.get_config()
-    config.main.dir_name = 'ipd_REFiNE_attack_2'
-    config.main.exp_name = 'ipd%d'%args.num
-    config.main.seed = 12340 + args.num
+    if args.exp == 'er':
+        config = config_room_REFiNE.get_config()
+        # For ER(10,6) experiment
+        n=10 # Number of agents in the Escape Room
+        m=6 # Minimum number of agents required at lever to trigger outcome
+        config.main.dir_name = 'er_REFiNE_10_6'
+        config.env.min_at_lever = m
+        config.env.n_agents = n
+        config.main.exp_name = 'er%d'%args.num
+        # config.main.seed = 12340 + args.num
+        # config.main.seed = random.random()
 
     train(config)
     print("set %d done"%args.num)

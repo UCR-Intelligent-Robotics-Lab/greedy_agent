@@ -30,7 +30,7 @@ def get_config():
     config.lio.optimizer = 'adam'
     config.lio.reg = 'l1'
     config.lio.reg_coeff = 0.0
-    config.lio.Fairness_multiplier = 100 #  \frac{1}{1-\gamma}
+    config.lio.Fairness_multiplier = 0.1 #  \frac{1}{1-\gamma}
     config.lio.eps = 1e-2
 
     config.lio.decentralized = False

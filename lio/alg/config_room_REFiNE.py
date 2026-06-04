@@ -36,8 +36,8 @@ def get_config():
     config.lio.lr_reward = 1e-3
     config.lio.lr_v = 1e-2
     config.lio.eps = 1e-2
-    config.lio.Fairness_multiplier = 100 #  \frac{1}{1-\gamma}
-    config.lio.energy_weight = 0.1
+    config.lio.Fairness_multiplier = 0.2 #  \frac{1}{1-\gamma}
+    config.lio.energy_weight = 1.0
     config.lio.optimizer = 'adam'
     config.lio.reg = 'l1'
     config.lio.reg_coeff = 1.0

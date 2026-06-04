@@ -1,0 +1,312 @@
+====================================================================================================
+# 0. INVENTORY  (count x basename, min_rows over matches)
+====================================================================================================
+   10 x  er_eia_3_1_w2.0-0.2                          min_rows=50
+   10 x  er_eia_4_2_w1.1-0.9                          min_rows=50
+   10 x  er_eia_4_2_w1.5-1.5                          min_rows=50
+   10 x  er_eia_4_2_w2.0-0.2                          min_rows=50
+   10 x  er_eia_6_4_w2.0-0.2                          min_rows=50
+   10 x  er_lio_3_1                                   min_rows=50
+   10 x  er_lio_4_2                                   min_rows=50
+   10 x  er_lio_6_4                                   min_rows=50
+   10 x  ipd_eia                                      min_rows=20
+   10 x  ipd_lio                                      min_rows=20
+    1 x  probe_er_4_2_B0.2_beta0_s0                   min_rows=20
+    1 x  probe_er_4_2_B0.2_beta0_s1                   min_rows=20
+    1 x  probe_er_4_2_B0_beta0.1_s0                   min_rows=20
+    1 x  probe_er_4_2_B0_beta0.1_s1                   min_rows=20
+    1 x  probe_er_4_2_B0_beta1.0_s0                   min_rows=20
+    1 x  probe_er_4_2_B0_beta1.0_s1                   min_rows=20
+    1 x  probe_er_4_2_B0_beta25.0_s0                  min_rows=20
+    1 x  probe_er_4_2_B0_beta25.0_s1                  min_rows=20
+    1 x  probe_er_4_2_B0_beta5.0_s0                   min_rows=20
+    1 x  probe_er_4_2_B0_beta5.0_s1                   min_rows=20
+    1 x  smoke_eia                                    min_rows=5
+    1 x  smoke_eia_4_2_w2.0-0.2                       min_rows=5
+    1 x  smoke_lio                                    min_rows=5
+    1 x  smoke_lio_3_1                                min_rows=5
+    1 x  smoke_refine_eia                             min_rows=5
+    1 x  smoke_refine_eia_4_2_w2.0-0.2                min_rows=5
+    1 x  smoke_sweep_check                            min_rows=2
+    1 x  sweep_er_refine_3_1_s0                       min_rows=50
+    1 x  sweep_er_refine_3_1_s1                       min_rows=50
+    1 x  sweep_er_refine_3_1_s2                       min_rows=50
+    1 x  sweep_er_refine_3_1_s3                       min_rows=50
+    1 x  sweep_er_refine_3_1_s4                       min_rows=50
+    1 x  sweep_er_refine_3_1_s5                       min_rows=50
+    1 x  sweep_er_refine_3_1_s6                       min_rows=50
+    1 x  sweep_er_refine_3_1_s7                       min_rows=50
+    1 x  sweep_er_refine_3_1_s8                       min_rows=50
+    1 x  sweep_er_refine_3_1_s9                       min_rows=50
+    1 x  sweep_er_refine_4_2_s0                       min_rows=50
+    1 x  sweep_er_refine_4_2_s1                       min_rows=50
+    1 x  sweep_er_refine_4_2_s2                       min_rows=50
+    1 x  sweep_er_refine_4_2_s3                       min_rows=50
+    1 x  sweep_er_refine_4_2_s4                       min_rows=50
+    1 x  sweep_er_refine_4_2_s5                       min_rows=50
+    1 x  sweep_er_refine_4_2_s6                       min_rows=50
+    1 x  sweep_er_refine_4_2_s7                       min_rows=50
+    1 x  sweep_er_refine_4_2_s8                       min_rows=50
+    1 x  sweep_er_refine_4_2_s9                       min_rows=50
+    1 x  sweep_er_refine_6_4_s0                       min_rows=50
+    1 x  sweep_er_refine_6_4_s1                       min_rows=50
+    1 x  sweep_er_refine_6_4_s2                       min_rows=50
+    1 x  sweep_er_refine_6_4_s3                       min_rows=50
+    1 x  sweep_er_refine_6_4_s4                       min_rows=50
+    1 x  sweep_er_refine_6_4_s5                       min_rows=50
+    1 x  sweep_er_refine_6_4_s6                       min_rows=50
+    1 x  sweep_er_refine_6_4_s7                       min_rows=50
+    1 x  sweep_er_refine_6_4_s8                       min_rows=50
+    1 x  sweep_er_refine_6_4_s9                       min_rows=50
+    1 x  sweep_er_refine_eia_3_1_s0                   min_rows=50
+    1 x  sweep_er_refine_eia_3_1_s1                   min_rows=50
+    1 x  sweep_er_refine_eia_3_1_s2                   min_rows=50
+    1 x  sweep_er_refine_eia_3_1_s3                   min_rows=50
+    1 x  sweep_er_refine_eia_3_1_s4                   min_rows=50
+    1 x  sweep_er_refine_eia_3_1_s5                   min_rows=50
+    1 x  sweep_er_refine_eia_3_1_s6                   min_rows=50
+    1 x  sweep_er_refine_eia_3_1_s7                   min_rows=50
+    1 x  sweep_er_refine_eia_3_1_s8                   min_rows=50
+    1 x  sweep_er_refine_eia_3_1_s9                   min_rows=50
+    1 x  sweep_er_refine_eia_4_2_B0_s0                min_rows=50
+    1 x  sweep_er_refine_eia_4_2_B0_s1                min_rows=50
+    1 x  sweep_er_refine_eia_4_2_B0_s2                min_rows=50
+    1 x  sweep_er_refine_eia_4_2_B0_s3                min_rows=50
+    1 x  sweep_er_refine_eia_4_2_B0_s4                min_rows=50
+    1 x  sweep_er_refine_eia_4_2_B0_s5                min_rows=50
+    1 x  sweep_er_refine_eia_4_2_B0_s6                min_rows=50
+    1 x  sweep_er_refine_eia_4_2_B0_s7                min_rows=50
+    1 x  sweep_er_refine_eia_4_2_B0_s8                min_rows=50
+    1 x  sweep_er_refine_eia_4_2_B0_s9                min_rows=50
+    1 x  sweep_er_refine_eia_4_2_beta0_s0             min_rows=50
+    1 x  sweep_er_refine_eia_4_2_beta0_s1             min_rows=50
+    1 x  sweep_er_refine_eia_4_2_beta0_s2             min_rows=50
+    1 x  sweep_er_refine_eia_4_2_beta0_s3             min_rows=50
+    1 x  sweep_er_refine_eia_4_2_beta0_s4             min_rows=50
+    1 x  sweep_er_refine_eia_4_2_beta0_s5             min_rows=50
+    1 x  sweep_er_refine_eia_4_2_beta0_s6             min_rows=50
+    1 x  sweep_er_refine_eia_4_2_beta0_s7             min_rows=50
+    1 x  sweep_er_refine_eia_4_2_beta0_s8             min_rows=50
+    1 x  sweep_er_refine_eia_4_2_beta0_s9             min_rows=50
+    1 x  sweep_er_refine_eia_4_2_s0                   min_rows=50
+    1 x  sweep_er_refine_eia_4_2_s1                   min_rows=50
+    1 x  sweep_er_refine_eia_4_2_s2                   min_rows=50
+    1 x  sweep_er_refine_eia_4_2_s3                   min_rows=50
+    1 x  sweep_er_refine_eia_4_2_s4                   min_rows=50
+    1 x  sweep_er_refine_eia_4_2_s5                   min_rows=50
+    1 x  sweep_er_refine_eia_4_2_s6                   min_rows=50
+    1 x  sweep_er_refine_eia_4_2_s7                   min_rows=50
+    1 x  sweep_er_refine_eia_4_2_s8                   min_rows=50
+    1 x  sweep_er_refine_eia_4_2_s9                   min_rows=50
+    1 x  sweep_er_refine_eia_4_2_w1.1-0.9_s0          min_rows=50
+    1 x  sweep_er_refine_eia_4_2_w1.1-0.9_s1          min_rows=50
+    1 x  sweep_er_refine_eia_4_2_w1.1-0.9_s2          min_rows=50
+    1 x  sweep_er_refine_eia_4_2_w1.1-0.9_s3          min_rows=50
+    1 x  sweep_er_refine_eia_4_2_w1.1-0.9_s4          min_rows=50
+    1 x  sweep_er_refine_eia_4_2_w1.1-0.9_s5          min_rows=50
+    1 x  sweep_er_refine_eia_4_2_w1.1-0.9_s6          min_rows=50
+    1 x  sweep_er_refine_eia_4_2_w1.1-0.9_s7          min_rows=50
+    1 x  sweep_er_refine_eia_4_2_w1.1-0.9_s8          min_rows=50
+    1 x  sweep_er_refine_eia_4_2_w1.1-0.9_s9          min_rows=50
+    1 x  sweep_er_refine_eia_4_2_w1.5-1.5_s0          min_rows=50
+    1 x  sweep_er_refine_eia_4_2_w1.5-1.5_s1          min_rows=50
+    1 x  sweep_er_refine_eia_4_2_w1.5-1.5_s2          min_rows=50
+    1 x  sweep_er_refine_eia_4_2_w1.5-1.5_s3          min_rows=50
+    1 x  sweep_er_refine_eia_4_2_w1.5-1.5_s4          min_rows=50
+    1 x  sweep_er_refine_eia_4_2_w1.5-1.5_s5          min_rows=50
+    1 x  sweep_er_refine_eia_4_2_w1.5-1.5_s6          min_rows=50
+    1 x  sweep_er_refine_eia_4_2_w1.5-1.5_s7          min_rows=50
+    1 x  sweep_er_refine_eia_4_2_w1.5-1.5_s8          min_rows=50
+    1 x  sweep_er_refine_eia_4_2_w1.5-1.5_s9          min_rows=50
+    1 x  sweep_er_refine_eia_6_4_s0                   min_rows=50
+    1 x  sweep_er_refine_eia_6_4_s1                   min_rows=50
+    1 x  sweep_er_refine_eia_6_4_s2                   min_rows=50
+    1 x  sweep_er_refine_eia_6_4_s3                   min_rows=50
+    1 x  sweep_er_refine_eia_6_4_s4                   min_rows=50
+    1 x  sweep_er_refine_eia_6_4_s5                   min_rows=50
+    1 x  sweep_er_refine_eia_6_4_s6                   min_rows=50
+    1 x  sweep_er_refine_eia_6_4_s7                   min_rows=50
+    1 x  sweep_er_refine_eia_6_4_s8                   min_rows=50
+    1 x  sweep_er_refine_eia_6_4_s9                   min_rows=50
+    1 x  sweep_ipd_refine_eia_B0.1_s0                 min_rows=20
+    1 x  sweep_ipd_refine_eia_B0.1_s1                 min_rows=20
+    1 x  sweep_ipd_refine_eia_B0.1_s2                 min_rows=20
+    1 x  sweep_ipd_refine_eia_B0.1_s3                 min_rows=20
+    1 x  sweep_ipd_refine_eia_B0.1_s4                 min_rows=20
+    1 x  sweep_ipd_refine_eia_B0.1_s5                 min_rows=20
+    1 x  sweep_ipd_refine_eia_B0.1_s6                 min_rows=20
+    1 x  sweep_ipd_refine_eia_B0.1_s7                 min_rows=20
+    1 x  sweep_ipd_refine_eia_B0.1_s8                 min_rows=20
+    1 x  sweep_ipd_refine_eia_B0.1_s9                 min_rows=20
+    1 x  tune_er_refine_eia_4_2_B0.1_s0               min_rows=20
+    1 x  tune_er_refine_eia_4_2_B0.1_s1               min_rows=20
+    1 x  tune_er_refine_eia_4_2_B0.3_s0               min_rows=20
+    1 x  tune_er_refine_eia_4_2_B0.3_s1               min_rows=20
+    1 x  tune_er_refine_eia_4_2_B0.5_s0               min_rows=20
+    1 x  tune_er_refine_eia_4_2_B0.5_s1               min_rows=20
+    1 x  tune_er_refine_eia_4_2_B1.0_s0               min_rows=20
+    1 x  tune_er_refine_eia_4_2_B1.0_s1               min_rows=20
+    1 x  tune_er_refine_eia_4_2_clip_B0.1_s0          min_rows=20
+    1 x  tune_er_refine_eia_4_2_clip_B0.1_s1          min_rows=20
+    1 x  tune_er_refine_eia_4_2_clip_B0.2_s0          min_rows=20
+    1 x  tune_er_refine_eia_4_2_clip_B0.2_s1          min_rows=20
+    1 x  tune_er_refine_eia_4_2_clip_B0.3_s0          min_rows=20
+    1 x  tune_er_refine_eia_4_2_clip_B0.3_s1          min_rows=20
+    1 x  tune_er_refine_eia_4_2_clip_B0.5_s0          min_rows=20
+    1 x  tune_er_refine_eia_4_2_clip_B0.5_s1          min_rows=20
+    1 x  tune_er_refine_eia_4_2_clip_B1.0_s0          min_rows=20
+    1 x  tune_er_refine_eia_4_2_clip_B1.0_s1          min_rows=20
+    1 x  tune_ipd_refine_eia_clip_B0.005_s0           min_rows=20
+    1 x  tune_ipd_refine_eia_clip_B0.005_s1           min_rows=20
+    1 x  tune_ipd_refine_eia_clip_B0.01_s0            min_rows=20
+    1 x  tune_ipd_refine_eia_clip_B0.01_s1            min_rows=20
+    1 x  tune_ipd_refine_eia_clip_B0.02_s0            min_rows=20
+    1 x  tune_ipd_refine_eia_clip_B0.02_s1            min_rows=20
+    1 x  tune_ipd_refine_eia_clip_B0.05_s0            min_rows=20
+    1 x  tune_ipd_refine_eia_clip_B0.05_s1            min_rows=20
+    1 x  tune_ipd_refine_eia_clip_B0.1_s0             min_rows=20
+    1 x  tune_ipd_refine_eia_clip_B0.1_s1             min_rows=20
+    1 x  tune_ipd_refine_eia_clip_B0.3_s0             min_rows=20
+    1 x  tune_ipd_refine_eia_clip_B0.3_s1             min_rows=20
+    1 x  tune_ipd_refine_eia_clip_B0.5_s0             min_rows=20
+    1 x  tune_ipd_refine_eia_clip_B0.5_s1             min_rows=20
+    1 x  tune_ipd_refine_eia_clip_B1.0_s0             min_rows=20
+    1 x  tune_ipd_refine_eia_clip_B1.0_s1             min_rows=20
+
+  TOTAL sweep_* run-dirs: 110
+
+====================================================================================================
+# A. ER SUSTAINABILITY + EIA DESTABILIZATION  (energy = sustainability metric)
+#    want: REFiNE+EIA energy ~10% < LIO; REFiNE+EIA energy +/- SMALL (re-stabilized);
+#          EIA energy +/- LARGE (destabilized); envR preserved (task kept).
+====================================================================================================
+
+-- (3,1) --
+  LIO (no atk)     envR   46.51 +/- 19.91 | energy  126.66 +/- 46.93 | enVar   2290.8 +/- 1143.8   (n=10, rows>=50)
+  EIA (atk)        envR   54.53 +/- 20.52 | energy  143.78 +/-102.29 | enVar   4926.5 +/- 5428.0   (n=10, rows>=50)
+  REFiNE+EIA       envR   63.33 +/-  0.00 | energy   74.67 +/-  0.00 | enVar   2494.5 +/-    0.0   (n=10, rows>=50)
+  REFiNE (no atk)  envR   63.22 +/-  0.29 | energy   74.89 +/-  0.51 | enVar   2489.6 +/-   15.6   (n=10, rows>=50)
+
+-- (4,2) --
+  LIO (no atk)     envR   43.56 +/-  0.77 | energy  104.64 +/-  9.96 | enVar   3402.1 +/-  581.0   (n=10, rows>=50)
+  EIA (atk)        envR   41.70 +/-  8.30 | energy  110.47 +/- 40.56 | enVar   4580.4 +/- 4868.5   (n=10, rows>=50)
+  REFiNE+EIA       envR   45.00 +/-  0.00 | energy   92.33 +/-  0.00 | enVar   2806.4 +/-    0.0   (n=10, rows>=50)
+  REFiNE (no atk)  envR   39.25 +/- 18.18 | energy  105.42 +/- 41.41 | enVar   2736.0 +/-  222.5   (n=10, rows>=50)
+
+-- (6,4) --
+  LIO (no atk)     envR    0.75 +/- 13.69 | energy  368.84 +/-143.41 | enVar  28883.5 +/-20864.5   (n=10, rows>=50)
+  EIA (atk)        envR   10.17 +/- 17.08 | energy  289.66 +/-182.48 | enVar  22361.8 +/-21155.5   (n=10, rows>=50)
+  REFiNE+EIA       envR  -10.00 +/-  0.00 | energy  223.28 +/- 59.59 | enVar  10132.1 +/-22059.9   (n=10, rows>=50)
+  REFiNE (no atk)  envR   -9.51 +/-  0.81 | energy  220.98 +/- 32.96 | enVar   7810.8 +/-12486.2   (n=10, rows>=50)
+
+====================================================================================================
+# B. ENERGY ATTRIBUTION @ (4,2)  ({B=0}=energy-only isolates beta; {beta=0}=amplifier-only)
+====================================================================================================
+
+  LIO              envR   43.56 +/-  0.77 | energy  104.64 +/-  9.96 | enVar   3402.1 +/-  581.0   (n=10, rows>=50)
+  FULL b=1,B=.2    envR   45.00 +/-  0.00 | energy   92.33 +/-  0.00 | enVar   2806.4 +/-    0.0   (n=10, rows>=50)
+  {B=0} energyOnly envR   45.00 +/-  0.00 | energy   92.33 +/-  0.00 | enVar   2806.4 +/-    0.0   (n=10, rows>=50)
+  {b=0} amplOnly   envR   44.67 +/-  0.24 | energy   96.28 +/-  3.19 | enVar   2999.8 +/-  169.5   (n=10, rows>=50)
+
+  en_mean reduction vs LIO:  FULL=11.8%   energy-only=11.8%   ampl-only=8.0%
+  -> energy term drives sustainability IF energy-only ~= FULL and ampl-only ~= 0.
+
+====================================================================================================
+# C. SCALABILITY  (REFiNE+EIA energy reduction vs LIO + task retention, per size)
+====================================================================================================
+
+  size        LIO en    REF+EIA en   en_red%   envR_ret%
+  (3,1)       126.66         74.67      41.1       136.2
+  (4,2)       104.64         92.33      11.8       103.3
+  (6,4)       368.84        223.28      39.5     -1327.4
+
+====================================================================================================
+# D. ATTACK-WEIGHT ROBUSTNESS @ (4,2)  (REFiNE+EIA energy/task vs attack weights)
+====================================================================================================
+
+-- EIA weights w2.0-0.2 (default) --
+    REFiNE+EIA     envR   45.00 +/-  0.00 | energy   92.33 +/-  0.00 | enVar   2806.4 +/-    0.0   (n=10, rows>=50)
+    EIA base       envR   41.70 +/-  8.30 | energy  110.47 +/- 40.56 | enVar   4580.4 +/- 4868.5   (n=10, rows>=50)
+-- EIA weights w1.1-0.9 --
+    REFiNE+EIA     envR   44.95 +/-  0.16 | energy   92.36 +/-  0.10 | enVar   2803.1 +/-   10.2   (n=10, rows>=50)
+    EIA base       envR   43.95 +/-  0.62 | energy  102.06 +/-  8.52 | enVar   3249.4 +/-  459.5   (n=10, rows>=50)
+-- EIA weights w1.5-1.5 --
+    REFiNE+EIA     envR   44.92 +/-  0.17 | energy   92.64 +/-  0.55 | enVar   2812.1 +/-   31.8   (n=10, rows>=50)
+    EIA base       envR   41.99 +/-  4.71 | energy  116.64 +/- 37.61 | enVar   3849.5 +/- 1722.8   (n=10, rows>=50)
+
+  -> robust if REFiNE+EIA energy stays low/stable and envR preserved across weights.
+
+====================================================================================================
+# E. IPD LIMITATION  (want LOW env_std + HIGH env_mean = cooperation restored)
+#    no restoration if REFiNE+EIA env_mean ~= EIA (~ -75) -> characterized limitation.
+====================================================================================================
+
+  IPD_LIO          env_mean   -66.41 +/- 16.35 | env_std   31.11 +/- 37.49   (n=10, rows>=20)
+  IPD_EIA          env_mean   -77.58 +/-  7.88 | env_std   67.02 +/- 23.55   (n=10, rows>=20)
+  REFiNE+EIA B=.1  env_mean   -88.63 +/- 12.46 | env_std   33.99 +/- 37.23   (n=10, rows>=20)
+
+====================================================================================================
+# F. PER-SEED CHECK  REFiNE+EIA (collapse if env_mean<15; incomplete if rows<50)
+====================================================================================================
+
+-- (3,1)  REFiNE+EIA --
+  sweep_er_refine_eia_3_1_s0         env_mean=  63.33  en_mean=  74.67  rows= 50
+  sweep_er_refine_eia_3_1_s1         env_mean=  63.33  en_mean=  74.67  rows= 50
+  sweep_er_refine_eia_3_1_s2         env_mean=  63.33  en_mean=  74.67  rows= 50
+  sweep_er_refine_eia_3_1_s3         env_mean=  63.33  en_mean=  74.67  rows= 50
+  sweep_er_refine_eia_3_1_s4         env_mean=  63.33  en_mean=  74.67  rows= 50
+  sweep_er_refine_eia_3_1_s5         env_mean=  63.33  en_mean=  74.67  rows= 50
+  sweep_er_refine_eia_3_1_s6         env_mean=  63.33  en_mean=  74.67  rows= 50
+  sweep_er_refine_eia_3_1_s7         env_mean=  63.33  en_mean=  74.67  rows= 50
+  sweep_er_refine_eia_3_1_s8         env_mean=  63.33  en_mean=  74.67  rows= 50
+  sweep_er_refine_eia_3_1_s9         env_mean=  63.33  en_mean=  74.67  rows= 50
+
+-- (4,2)  REFiNE+EIA --
+  sweep_er_refine_eia_4_2_s0         env_mean=  45.00  en_mean=  92.33  rows= 50
+  sweep_er_refine_eia_4_2_s1         env_mean=  45.00  en_mean=  92.33  rows= 50
+  sweep_er_refine_eia_4_2_s2         env_mean=  45.00  en_mean=  92.33  rows= 50
+  sweep_er_refine_eia_4_2_s3         env_mean=  45.00  en_mean=  92.33  rows= 50
+  sweep_er_refine_eia_4_2_s4         env_mean=  45.00  en_mean=  92.33  rows= 50
+  sweep_er_refine_eia_4_2_s5         env_mean=  45.00  en_mean=  92.33  rows= 50
+  sweep_er_refine_eia_4_2_s6         env_mean=  45.00  en_mean=  92.33  rows= 50
+  sweep_er_refine_eia_4_2_s7         env_mean=  45.00  en_mean=  92.33  rows= 50
+  sweep_er_refine_eia_4_2_s8         env_mean=  45.00  en_mean=  92.33  rows= 50
+  sweep_er_refine_eia_4_2_s9         env_mean=  45.00  en_mean=  92.33  rows= 50
+
+-- (6,4)  REFiNE+EIA --
+  sweep_er_refine_eia_6_4_s0         env_mean= -10.00  en_mean= 196.80  rows= 50 COLLAPSE
+  sweep_er_refine_eia_6_4_s1         env_mean= -10.00  en_mean= 373.37  rows= 50 COLLAPSE
+  sweep_er_refine_eia_6_4_s2         env_mean= -10.00  en_mean= 285.08  rows= 50 COLLAPSE
+  sweep_er_refine_eia_6_4_s3         env_mean= -10.00  en_mean= 196.80  rows= 50 COLLAPSE
+  sweep_er_refine_eia_6_4_s4         env_mean= -10.00  en_mean= 196.80  rows= 50 COLLAPSE
+  sweep_er_refine_eia_6_4_s5         env_mean= -10.00  en_mean= 196.80  rows= 50 COLLAPSE
+  sweep_er_refine_eia_6_4_s6         env_mean= -10.00  en_mean= 196.80  rows= 50 COLLAPSE
+  sweep_er_refine_eia_6_4_s7         env_mean= -10.00  en_mean= 196.80  rows= 50 COLLAPSE
+  sweep_er_refine_eia_6_4_s8         env_mean= -10.00  en_mean= 196.80  rows= 50 COLLAPSE
+  sweep_er_refine_eia_6_4_s9         env_mean= -10.00  en_mean= 196.80  rows= 50 COLLAPSE
+
+-- (4,2) {b=0} amplOnly --
+  sweep_er_refine_eia_4_2_beta0_s0   env_mean=  44.35  en_mean= 101.85  rows= 50
+  sweep_er_refine_eia_4_2_beta0_s1   env_mean=  44.85  en_mean=  93.64  rows= 50
+  sweep_er_refine_eia_4_2_beta0_s2   env_mean=  44.35  en_mean=  93.95  rows= 50
+  sweep_er_refine_eia_4_2_beta0_s3   env_mean=  44.60  en_mean=  96.58  rows= 50
+  sweep_er_refine_eia_4_2_beta0_s4   env_mean=  44.75  en_mean=  95.27  rows= 50
+  sweep_er_refine_eia_4_2_beta0_s5   env_mean=  45.00  en_mean=  92.33  rows= 50
+  sweep_er_refine_eia_4_2_beta0_s6   env_mean=  44.85  en_mean=  96.28  rows= 50
+  sweep_er_refine_eia_4_2_beta0_s7   env_mean=  44.35  en_mean= 101.77  rows= 50
+  sweep_er_refine_eia_4_2_beta0_s8   env_mean=  44.80  en_mean=  95.57  rows= 50
+  sweep_er_refine_eia_4_2_beta0_s9   env_mean=  44.80  en_mean=  95.57  rows= 50
+
+-- (4,2) {B=0} energyOnly --
+  sweep_er_refine_eia_4_2_B0_s0      env_mean=  45.00  en_mean=  92.33  rows= 50
+  sweep_er_refine_eia_4_2_B0_s1      env_mean=  45.00  en_mean=  92.33  rows= 50
+  sweep_er_refine_eia_4_2_B0_s2      env_mean=  45.00  en_mean=  92.33  rows= 50
+  sweep_er_refine_eia_4_2_B0_s3      env_mean=  45.00  en_mean=  92.33  rows= 50
+  sweep_er_refine_eia_4_2_B0_s4      env_mean=  45.00  en_mean=  92.33  rows= 50
+  sweep_er_refine_eia_4_2_B0_s5      env_mean=  45.00  en_mean=  92.33  rows= 50
+  sweep_er_refine_eia_4_2_B0_s6      env_mean=  45.00  en_mean=  92.33  rows= 50
+  sweep_er_refine_eia_4_2_B0_s7      env_mean=  45.00  en_mean=  92.33  rows= 50
+  sweep_er_refine_eia_4_2_B0_s8      env_mean=  45.00  en_mean=  92.33  rows= 50
+  sweep_er_refine_eia_4_2_B0_s9      env_mean=  45.00  en_mean=  92.33  rows= 50
+
+[done]
