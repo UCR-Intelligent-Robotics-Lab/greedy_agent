@@ -245,6 +245,26 @@ def test_launcher_dispatch_and_provenance(monkeypatch, tmp_path, method, profile
                         lambda name: modules[name] if name in modules else real_import(name))
     monkeypatch.setitem(sys.modules, "tensorflow", SimpleNamespace(set_random_seed=lambda seed: None,
                                                                    __version__="test-double"))
+    graph = SimpleNamespace(seed=None)
+    events = []
+
+    def set_graph_seed(seed):
+        graph.seed = seed
+        events.append(("graph_seed", seed))
+
+    sys.modules["tensorflow"].compat = SimpleNamespace(v1=SimpleNamespace(
+        set_random_seed=set_graph_seed, get_default_graph=lambda: graph))
+    assert sys.modules["tensorflow"].compat.v1.get_default_graph().seed is None
+    stub_import = runtime.importlib.import_module
+
+    def record_trainer_import(name):
+        module = stub_import(name)
+        if name == f"lio.alg.{train_name}":
+            events.append(("trainer_import", name))
+        return module
+
+    monkeypatch.setattr(runtime.importlib, "import_module", record_trainer_import)
+    monkeypatch.delenv("TF_ENABLE_ONEDNN_OPTS", raising=False)
     monkeypatch.setattr(run_single, "_set_thread_env", lambda threads: None)
     monkeypatch.setattr(run_single, "_git_field", lambda cmd: "test-double")
     monkeypatch.setattr(run_single, "_git_dirty", lambda: True)
@@ -261,6 +281,11 @@ def test_launcher_dispatch_and_provenance(monkeypatch, tmp_path, method, profile
     provenance_path = tmp_path / "lio/results/p1/probe/provenance.json"
     original_bytes = provenance_path.read_bytes()
     provenance = json.loads(original_bytes)
+    expected_seed = run_single._parse_args().seed
+    assert events == [("trainer_import", f"lio.alg.{train_name}"),
+                      ("graph_seed", expected_seed)]
+    assert provenance["tf_graph_seed"] == expected_seed
+    assert provenance["onednn_opts"] == "0"
     if profile == "legacy":
         assert "cost_profile" not in provenance
     else:

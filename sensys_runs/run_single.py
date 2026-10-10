@@ -127,6 +127,8 @@ def _write_provenance(
     tf_version: str,
     np_version: str,
 ) -> None:
+    import tensorflow as tf
+
     record: dict[str, Any] = {
         "platform": args.platform,
         "hostname": socket.gethostname(),
@@ -137,6 +139,8 @@ def _write_provenance(
         "python": platform_mod.python_version(),
         "executable": sys.executable,
         "tensorflow": tf_version,
+        "tf_graph_seed": tf.compat.v1.get_default_graph().seed,
+        "onednn_opts": os.environ.get("TF_ENABLE_ONEDNN_OPTS"),
         "numpy": np_version,
         "timestamp_utc": datetime.now(timezone.utc).isoformat(),
         "method": args.method,
@@ -192,6 +196,8 @@ def main() -> None:
 
     np.random.seed(args.seed)
 
+    # P3a finding 3: oneDNN off removed LIO checkpoint rounding drift.
+    os.environ.setdefault("TF_ENABLE_ONEDNN_OPTS", "0")
     import tensorflow as tf
 
     try:
@@ -205,6 +211,8 @@ def main() -> None:
     config_mod_name, train_mod_name = METHOD_MAP[args.method]
     config_mod = importlib.import_module(f"lio.alg.{config_mod_name}")
     train_mod = importlib.import_module(f"lio.alg.{train_mod_name}")
+    # P3a finding 1: the earlier eager-mode seed left this graph unseeded.
+    tf.compat.v1.set_random_seed(args.seed)
     cfg = config_mod.get_config()
     train = train_mod.train
 
