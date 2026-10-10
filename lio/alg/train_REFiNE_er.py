@@ -291,6 +291,11 @@ def train(config):
 
     saver.save(sess, os.path.join(log_path, model_name))
 
+    if getattr(config, 'cost_profile', {}).get('profile_id', 'legacy') != 'legacy':
+        from sensys_runs.energy_profile_eval import evaluate_final_policy
+        evaluate_final_policy(sess, env, list_agents, config,
+                              os.path.join(log_path, model_name), 'refine_er')
+
 
 def run_episode(sess, env, list_agents, epsilon, prime=False):
     list_buffers = [Buffer(env.n_agents) for _ in range(env.n_agents)]
