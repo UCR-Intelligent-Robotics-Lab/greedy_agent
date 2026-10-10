@@ -34,6 +34,14 @@ PAIR_FIELDS = ("seed", *GROUP_FIELDS, "reference_method", "reference_training_pr
                *("delta_" + metric for metric in METRICS))
 
 
+# Append-only schema extension: absent flags denote the historical objective.
+SEED_FIELDS += ("objective", "training_hardware_profile", "evaluation_hardware_profile")
+SUMMARY_FIELDS += ("objective", "training_hardware_profile", "evaluation_hardware_profile")
+PAIR_FIELDS += ("objective", "reference_objective", "training_hardware_profile",
+                "evaluation_hardware_profile", "reference_hardware_profile")
+PAIR_FIELDS += ("reference_training_match", "reference_training_match_justification")
+
+
 def load_run(directory: Path) -> tuple[dict, list[dict]]:
     """Refuse missing, corrupt, mixed, duplicated or incomplete evaluation data."""
     with (directory / MANIFEST_FILE).open(encoding="utf-8") as stream:
@@ -119,6 +127,10 @@ def score_rows(rows: list[dict], costs) -> dict:
 
 def summarize_runs(runs: list[tuple[dict, list[dict]]]) -> tuple[list, list, list]:
     """Keep seeds independent and pair only identical seed IDs within one ER setup."""
+    if any(meta["config"].get("energy_in_reward", False) or
+           "hardware_profile_lambda" in meta["config"] for meta, _ in runs):
+        from sensys_runs.energy_reward_summary import summarize_objectives
+        return summarize_objectives(runs)
     seed_rows, identities, setups, arm_configs = [], set(), set(), {}
     for meta, rows in runs:
         identity = (meta["method"], meta["training_profile"], meta["seed"])
@@ -159,6 +171,12 @@ def summarize_runs(runs: list[tuple[dict, list[dict]]]) -> tuple[list, list, lis
                 pairs.append(dict(seed=seed, **dict(zip(GROUP_FIELDS, key)),
                                   reference_method=reference[0], reference_training_profile=reference[1],
                                   **{"delta_" + m: row[m] - baseline[m] for m in METRICS}))
+    for collection in (seed_rows, summary, pairs):
+        for row in collection:
+            row.update(objective="env_reward", training_hardware_profile="homogeneous_v1",
+                       evaluation_hardware_profile="homogeneous_v1")
+    for row in pairs:
+        row.update(reference_objective="env_reward", reference_hardware_profile="homogeneous_v1")
     return seed_rows, summary, pairs
 
 
@@ -183,6 +201,15 @@ def main() -> int:
     if failures:
         print("\n".join(failures), file=sys.stderr)
         return 1
+    from sensys_runs.energy_reward_summary import write_objective_summary
+    if args.evaluation_hardware_profile is not None or any(
+            meta["config"].get("energy_in_reward", False) or
+            "hardware_profile_lambda" in meta["config"] for meta, _ in runs):
+        try:
+            return write_objective_summary(runs, args.runs, args.out, args.evaluation_hardware_profile)
+        except (ValueError, KeyError, TypeError) as exc:
+            print(f"CONFIG_ERROR: {exc}", file=sys.stderr)
+            return 2
     try:
         if args.evaluation_hardware_profile is not None or any(
                 "hardware_profile_lambda" in meta["config"] for meta, _ in runs):

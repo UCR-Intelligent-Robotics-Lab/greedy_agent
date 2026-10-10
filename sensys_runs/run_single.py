@@ -72,6 +72,7 @@ def _parse_args() -> argparse.Namespace:
     p.add_argument("--cost_profile", choices=PROFILE_CHOICES, default="legacy")
     from sensys_runs.energy_profiles import HARDWARE_PROFILES
     p.add_argument("--hardware_profile", choices=tuple(HARDWARE_PROFILES), default="homogeneous_v1")
+    p.add_argument("--energy_in_reward", action="store_true", default=False)
     return p.parse_args()
 
 
@@ -171,6 +172,9 @@ def _write_provenance(
         record["cost_profile"] = cfg.cost_profile
         record["hardware_profile"] = cfg.hardware_profile
         record["hardware_profile_lambda"] = cfg.hardware_profile_lambda
+    if getattr(args, "energy_in_reward", False):
+        from sensys_runs.energy_reward_runtime import REWARD_FIELDS
+        record.update({key: cfg[key] for key in REWARD_FIELDS})
 
     try:
         with open(os.path.join(log_path, "provenance.json"), "w", encoding="utf-8") as f:
@@ -181,6 +185,9 @@ def _write_provenance(
 
 def main() -> None:
     args = _parse_args()
+    if args.energy_in_reward and (args.method != "lio_er" or args.cost_profile == "legacy"):
+        print("CONFIG_ERROR: --energy_in_reward requires lio_er with non-legacy costs", file=sys.stderr)
+        sys.exit(2)
     if args.cost_profile == "legacy" and any(
             arg == "--hardware_profile" or arg.startswith("--hardware_profile=") for arg in sys.argv[1:]):
         print("CONFIG_ERROR: --hardware_profile requires non-legacy costs", file=sys.stderr)
@@ -269,6 +276,9 @@ def main() -> None:
         except EnergyProfileError as exc:
             print(f"CONFIG_ERROR: {exc}", file=sys.stderr)
             sys.exit(2)
+    if args.energy_in_reward:
+        from sensys_runs.energy_reward_runtime import configure
+        configure(cfg)
     log_path = os.path.join(REPO_ROOT, "lio", "results", args.exp_name, args.dir_name)
     if args.cost_profile != "legacy":
         cfg.cost_profile = get_profile(args.cost_profile).snapshot()
@@ -307,6 +317,10 @@ def main() -> None:
 
     if args.cost_profile != "legacy":
         train = wrap_training(train, args.cost_profile, args.method)
+
+    if args.energy_in_reward:
+        from sensys_runs.energy_reward_runtime import wrap_training as wrap_energy_reward
+        train = wrap_energy_reward(train, train_mod)
 
     try:
         train(cfg)

@@ -68,6 +68,11 @@ def check_fresh(row: dict) -> None:
 def shard_plan(manifest: dict, shard: int, count: int) -> list[dict]:
     if count < 1 or not 0 <= shard < count:
         raise RunnerError("require --of >= 1 and 0 <= --shard < --of")
+    if manifest.get("wave") == 3:
+        from sensys_runs.energy_reward_campaign import WAVE3_HARDWARE
+        ordered = sorted(manifest["runs"], key=lambda r: (
+            r["seed"], WAVE3_HARDWARE.index(r["hardware_profile"])))
+        return ordered[shard::count]
     if manifest.get("wave") == 2:
         from sensys_runs.energy_hardware_campaign import WAVE2_ARMS
         ordered = sorted(manifest["runs"], key=lambda r: (
@@ -114,6 +119,21 @@ def validate(manifest: dict, console: Path) -> None:
             raise RunnerError("argv arm does not match manifest")
         if int(option(argv, "--seed")) != row["seed"]:
             raise RunnerError("argv seed does not match manifest")
+        if "--energy_in_reward" in argv:
+            from sensys_runs.energy_reward_runtime import REWARD_FORM, registered_beta
+            cfg = row["effective_config"]
+            if (argv.count("--energy_in_reward") != 1 or row["method"] != "lio_er"
+                    or not cfg.get("energy_in_reward") or cfg.get("energy_reward_beta") != registered_beta()
+                    or cfg.get("energy_reward_form") != REWARD_FORM):
+                raise RunnerError("Invalid energy-reward manifest")
+            from sensys_runs.energy_profiles import get_profile
+            get_profile(row["training_profile"])
+        elif row.get("effective_config", {}).get("energy_in_reward", False):
+            raise RunnerError("Energy-reward config requires its recorded argv flag")
+        # Extend acceptance per row only after validating the explicit objective.
+        ARMS = globals()["ARMS"]
+        if "--energy_in_reward" in argv:
+            ARMS = (*ARMS, (row["method"], row["training_profile"]))
         if (row["method"], row["training_profile"]) not in ARMS:
             raise RunnerError("unknown campaign arm")
         if "--hardware_profile" in argv:
