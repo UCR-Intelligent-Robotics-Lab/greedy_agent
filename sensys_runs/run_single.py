@@ -19,6 +19,12 @@ from typing import Any
 REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 LIO_ALG = os.path.join(REPO_ROOT, "lio", "alg")
 
+# The CLI is also invoked directly as a script, before main sets import paths.
+if REPO_ROOT not in sys.path:
+    sys.path.insert(0, REPO_ROOT)
+from sensys_runs.energy_profiles import PROFILE_CHOICES, EnergyProfileError, get_profile
+from sensys_runs.energy_profile_runtime import validate_run, wrap_training
+
 ER_METHODS = ("lio_er", "lio_eia_er", "refine_er", "refine_eia_er")
 EIA_ER_METHODS = ("lio_eia_er", "refine_eia_er")
 
@@ -63,6 +69,7 @@ def _parse_args() -> argparse.Namespace:
         help="Clip per-agent fairness coef g_i to be non-negative (REFiNE only)",
     )
     p.add_argument("--use_gpu", action="store_true", default=False)
+    p.add_argument("--cost_profile", choices=PROFILE_CHOICES, default="legacy")
     return p.parse_args()
 
 
@@ -154,6 +161,9 @@ def _write_provenance(
             record["energy_weight"] = getattr(cfg.lio, "energy_weight", None)
         record["fairness_clip"] = bool(getattr(cfg.lio, "fairness_clip", False))
 
+    if args.cost_profile != "legacy":
+        record["cost_profile"] = cfg.cost_profile
+
     try:
         with open(os.path.join(log_path, "provenance.json"), "w", encoding="utf-8") as f:
             json.dump(record, f, indent=2, sort_keys=True)
@@ -163,6 +173,12 @@ def _write_provenance(
 
 def main() -> None:
     args = _parse_args()
+    try:
+        validate_run(args.cost_profile, args.method, os.path.join(
+            REPO_ROOT, "lio", "results", args.exp_name, args.dir_name))
+    except EnergyProfileError as exc:
+        print(f"CONFIG_ERROR: {exc}", file=sys.stderr)
+        sys.exit(2)
     _set_thread_env(args.threads)
 
     for path in (REPO_ROOT, LIO_ALG):
@@ -229,6 +245,16 @@ def main() -> None:
             cfg.lio.fairness_clip = True
 
     log_path = os.path.join(REPO_ROOT, "lio", "results", args.exp_name, args.dir_name)
+    if args.cost_profile != "legacy":
+        cfg.cost_profile = get_profile(args.cost_profile).snapshot()
+        try:
+            validate_run(args.cost_profile, args.method, log_path)
+            os.makedirs(os.path.dirname(log_path), exist_ok=True)
+            # Exclusive creation closes the race between validation and writing.
+            os.mkdir(log_path)
+        except (EnergyProfileError, OSError) as exc:
+            print(f"CONFIG_ERROR: {exc}", file=sys.stderr)
+            sys.exit(2)
     os.makedirs(log_path, exist_ok=True)
     _write_provenance(log_path, args, cfg, tf_version, np_version)
 
@@ -253,6 +279,9 @@ def main() -> None:
         f"n_episodes={cfg.alg.n_episodes} period={cfg.alg.period} n_eval={cfg.alg.n_eval} "
         f"{' '.join(extra)} use_gpu={cfg.main.use_gpu}"
     )
+
+    if args.cost_profile != "legacy":
+        train = wrap_training(train, args.cost_profile, args.method)
 
     try:
         train(cfg)
