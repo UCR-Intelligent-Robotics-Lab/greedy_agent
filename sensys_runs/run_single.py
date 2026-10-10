@@ -70,6 +70,8 @@ def _parse_args() -> argparse.Namespace:
     )
     p.add_argument("--use_gpu", action="store_true", default=False)
     p.add_argument("--cost_profile", choices=PROFILE_CHOICES, default="legacy")
+    from sensys_runs.energy_profiles import HARDWARE_PROFILES
+    p.add_argument("--hardware_profile", choices=tuple(HARDWARE_PROFILES), default="homogeneous_v1")
     return p.parse_args()
 
 
@@ -167,6 +169,8 @@ def _write_provenance(
 
     if args.cost_profile != "legacy":
         record["cost_profile"] = cfg.cost_profile
+        record["hardware_profile"] = cfg.hardware_profile
+        record["hardware_profile_lambda"] = cfg.hardware_profile_lambda
 
     try:
         with open(os.path.join(log_path, "provenance.json"), "w", encoding="utf-8") as f:
@@ -177,6 +181,10 @@ def _write_provenance(
 
 def main() -> None:
     args = _parse_args()
+    if args.cost_profile == "legacy" and any(
+            arg == "--hardware_profile" or arg.startswith("--hardware_profile=") for arg in sys.argv[1:]):
+        print("CONFIG_ERROR: --hardware_profile requires non-legacy costs", file=sys.stderr)
+        sys.exit(2)
     try:
         validate_run(args.cost_profile, args.method, os.path.join(
             REPO_ROOT, "lio", "results", args.exp_name, args.dir_name))
@@ -252,6 +260,15 @@ def main() -> None:
         if args.fairness_clip:
             cfg.lio.fairness_clip = True
 
+    if args.cost_profile != "legacy":
+        from sensys_runs.energy_profiles import get_hardware_profile
+        try:
+            hardware = get_hardware_profile(args.hardware_profile)
+            cfg.hardware_profile = hardware.snapshot(cfg.env.n_agents)
+            cfg.hardware_profile_lambda = list(hardware.vector(cfg.env.n_agents))
+        except EnergyProfileError as exc:
+            print(f"CONFIG_ERROR: {exc}", file=sys.stderr)
+            sys.exit(2)
     log_path = os.path.join(REPO_ROOT, "lio", "results", args.exp_name, args.dir_name)
     if args.cost_profile != "legacy":
         cfg.cost_profile = get_profile(args.cost_profile).snapshot()

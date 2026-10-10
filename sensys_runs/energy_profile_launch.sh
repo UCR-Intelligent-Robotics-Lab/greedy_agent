@@ -23,6 +23,8 @@ mapfile -t fields <<< "$metadata"
 manifest=${fields[0]}
 threads=${fields[1]}
 console=${fields[2]}
+# P4: use the same results-root-derived directory as the runner (smoke differs).
+console=$("$python" -B -c 'import json,sys; sys.path.insert(0,sys.argv[2]); from sensys_runs.energy_profile_runner import default_console_dir; print(default_console_dir(json.load(open(sys.argv[1]))))' "$manifest" "$repo")
 [[ $threads == 1 ]] || die 'manifest threads must be 1'
 (( count * threads <= $(nproc) )) || die 'K x threads exceeds nproc'
 [[ ! -e $console && ! -L $console ]] || die "console directory must be absent: $console"

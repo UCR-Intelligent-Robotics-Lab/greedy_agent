@@ -69,6 +69,9 @@ def saved_fixture(tmp_path, profile="paper_ratio_v1", method="refine_er"):
     for suffix in (".index", ".meta", ".data-00000-of-00001"):
         Path(str(prefix) + suffix).write_bytes(b"synthetic checkpoint fixture")
     result = evaluate_final_policy(None, env, agents, cfg, prefix, method, evaluator)
+    # Synthetic P2 fixture explicitly declares the reviewed homogeneous source era.
+    (tmp_path / "provenance.json").write_text(json.dumps(dict(
+        git_commit="78971fe75c6314bf80264131a84048a81f0a3891", git_dirty=False)))
     return cfg, env, prefix, result
 
 

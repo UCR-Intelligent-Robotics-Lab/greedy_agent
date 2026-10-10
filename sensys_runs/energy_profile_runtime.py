@@ -12,6 +12,7 @@ import os
 from typing import Callable, Iterator
 
 from sensys_runs.energy_profiles import EnergyProfileError, action_cost, get_profile
+from sensys_runs.energy_hardware_runtime import ACTIVE_HARDWARE, agent_lambda, hardware_training
 
 
 AGENT_CLASSES = {
@@ -46,6 +47,8 @@ def cost_profile_scope(profile: str, method: str) -> Iterator[None]:
 
     def calculate_energy_cost(self, state, action):
         # Observations are deliberately irrelevant to the registered fixed table.
+        if ACTIVE_HARDWARE.get() is not None:
+            return action_cost(profile, action, self.energy_param) * agent_lambda(self)
         return action_cost(profile, action, self.energy_param)
 
     agent_class.calculate_energy_cost = calculate_energy_cost
@@ -60,6 +63,7 @@ def wrap_training(train: Callable, profile: str, method: str) -> Callable:
     if profile == "legacy":
         return train
 
+    @hardware_training
     @wraps(train)
     def wrapped(config):
         with cost_profile_scope(profile, method):

@@ -166,6 +166,10 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--runs", nargs="+", type=Path, required=True, help="Exact final run directories")
     parser.add_argument("--out", type=Path, required=True, help="Fresh summary directory")
+    from sensys_runs.energy_profiles import HARDWARE_PROFILES
+    from sensys_runs.energy_hardware_summary import record_hardware_origin, write_hardware_summary
+    parser.add_argument("--evaluation_hardware_profile", choices=tuple(HARDWARE_PROFILES),
+                        help="Evaluation-only registered lambda; no policy changes")
     args = parser.parse_args()
     if args.out.exists() or args.out.is_symlink():
         parser.error("Summary output must not exist")
@@ -173,12 +177,16 @@ def main() -> int:
     for directory in args.runs:
         try:
             runs.append(load_run(directory))
+            record_hardware_origin(runs[-1][0], directory)
         except (OSError, ValueError, KeyError, TypeError) as exc:
             failures.append(f"{directory}: {exc}")
     if failures:
         print("\n".join(failures), file=sys.stderr)
         return 1
     try:
+        if args.evaluation_hardware_profile is not None or any(
+                "hardware_profile_lambda" in meta["config"] for meta, _ in runs):
+            return write_hardware_summary(runs, args.runs, args.out, args.evaluation_hardware_profile)
         seeds, summary, pairs = summarize_runs(runs)
     except (ValueError, KeyError, TypeError) as exc:
         print(f"CONFIG_ERROR: {exc}", file=sys.stderr)
@@ -194,6 +202,7 @@ def main() -> int:
     with (args.out / "inputs.json").open("x", encoding="utf-8") as stream:
         json.dump(dict(inputs=[dict(directory=str(p.resolve()),
                                     manifest_sha256=sha256(p / MANIFEST_FILE)) for p in args.runs],
+                       hardware_origins=[meta["hardware_origin"] for meta, _ in runs],
                        units="normalized_modeled_cost", delta_convention="method minus reference",
                        failed_episodes="included", intervals="not computed",
                        evaluation_profiles=json_copy({k: p.snapshot() for k, p in PROFILES.items()})),

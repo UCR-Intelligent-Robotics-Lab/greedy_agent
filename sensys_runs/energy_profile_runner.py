@@ -49,6 +49,14 @@ def option(argv: list[str], name: str) -> str:
     return argv[index]
 
 
+def default_console_dir(manifest: dict) -> Path:
+    """The results-root name separates smoke from formal without touching results."""
+    roots = {Path(row["output_directory"]).parent for row in manifest["runs"]}
+    if len(roots) != 1:
+        raise RunnerError("Manifest requires one results root")
+    return Path.home() / "iccps_runs" / (next(iter(roots)).name + "_console")
+
+
 def check_fresh(row: dict) -> None:
     if git("status", "--porcelain"):
         raise RunnerError("repository is not porcelain-empty")
@@ -60,6 +68,11 @@ def check_fresh(row: dict) -> None:
 def shard_plan(manifest: dict, shard: int, count: int) -> list[dict]:
     if count < 1 or not 0 <= shard < count:
         raise RunnerError("require --of >= 1 and 0 <= --shard < --of")
+    if manifest.get("wave") == 2:
+        from sensys_runs.energy_hardware_campaign import WAVE2_ARMS
+        ordered = sorted(manifest["runs"], key=lambda r: (
+            r["seed"], WAVE2_ARMS.index((r["method"], r["training_profile"])) ))
+        return ordered[shard::count]
     ordered = sorted(manifest["runs"], key=lambda r: (
         r["seed"], ARMS.index((r["method"], r["training_profile"]))))
     return ordered[shard::count]
@@ -103,6 +116,13 @@ def validate(manifest: dict, console: Path) -> None:
             raise RunnerError("argv seed does not match manifest")
         if (row["method"], row["training_profile"]) not in ARMS:
             raise RunnerError("unknown campaign arm")
+        if "--hardware_profile" in argv:
+            from sensys_runs.energy_profiles import get_hardware_profile
+            hardware = get_hardware_profile(option(argv, "--hardware_profile"))
+            cfg = row["effective_config"]
+            if (cfg["hardware_profile_lambda"] != list(hardware.vector(cfg["env"]["n_agents"]))
+                    or cfg["hardware_profile"] != hardware.snapshot(cfg["env"]["n_agents"])):
+                raise RunnerError("manifest hardware config differs from argv")
         roots.add(target.parent)
         targets.add(target)
         if target.exists() or target.is_symlink():
@@ -213,6 +233,8 @@ def main(argv: list[str] | None = None) -> int:
         if not isinstance(name, str) or not name or any(c not in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-" for c in name):
             raise RunnerError("invalid campaign name")
         console = (args.console_dir or Path.home() / "iccps_runs" / (name + "_console")).resolve()
+        if args.console_dir is None:
+            console = default_console_dir(manifest).resolve()
         validate(manifest, console)
         rows = shard_plan(manifest, args.shard, args.of)
         if args.start_together and (len(args.start_together) != 32 or
