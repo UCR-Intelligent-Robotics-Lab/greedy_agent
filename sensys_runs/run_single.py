@@ -156,6 +156,14 @@ def _write_provenance(
         "use_gpu": bool(cfg.main.use_gpu),
         "threads": args.threads,
     }
+    from sensys_runs.energy_profile_runtime import AGENT_CLASSES
+    record["agent_module_aliases"] = {
+        "lio_agent_er": "lio.alg.lio_agent_er",
+        "REFiNE_er": "lio.alg.REFiNE_er",
+    }
+    record["agent_cost_patch_target"] = (
+        AGENT_CLASSES[args.method][0] if args.cost_profile != "legacy"
+        and args.method in AGENT_CLASSES else None)
     if args.method in ER_METHODS:
         record["n_agents"] = int(cfg.env.n_agents)
         record["min_at_lever"] = int(cfg.env.min_at_lever)
@@ -225,6 +233,11 @@ def main() -> None:
 
     config_mod_name, train_mod_name = METHOD_MAP[args.method]
     config_mod = importlib.import_module(f"lio.alg.{config_mod_name}")
+    # P7: the bare LIO trainer import must share the class patched by P1.
+    import lio.alg.lio_agent_er
+    import lio.alg.REFiNE_er
+    sys.modules["lio_agent_er"] = lio.alg.lio_agent_er
+    sys.modules["REFiNE_er"] = lio.alg.REFiNE_er
     train_mod = importlib.import_module(f"lio.alg.{train_mod_name}")
     # P3a finding 1: the earlier eager-mode seed left this graph unseeded.
     tf.compat.v1.set_random_seed(args.seed)

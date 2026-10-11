@@ -145,6 +145,8 @@ def test_launcher_config_provenance_and_scoped_dispatch(monkeypatch, tmp_path, e
     trainer.train = train
     modules = {"lio.alg.config_room_lio": SimpleNamespace(get_config=lambda: cfg),
                "lio.alg.train_lio_er": trainer, "lio.alg.lio_agent_er": SimpleNamespace(LIO=Agent)}
+    from test_energy_profiles import register_agent_module_doubles
+    register_agent_module_doubles(monkeypatch, modules)
     real_import = cost.importlib.import_module
     monkeypatch.setattr(cost.importlib, "import_module", lambda name: modules[name] if name in modules else real_import(name))
     graph = SimpleNamespace(seed=None)
@@ -159,6 +161,7 @@ def test_launcher_config_provenance_and_scoped_dispatch(monkeypatch, tmp_path, e
     argv = ["run_single", "--method", "lio_er", "--exp_name", "p5", "--dir_name", "probe", "--seed", "1", "--cost_profile", "paper_ratio_v1"]
     monkeypatch.setattr(sys, "argv", argv + (["--energy_in_reward"] if enabled else []))
     with pytest.raises(SystemExit) as exc: run_single.main()
+    assert sys.modules["lio_agent_er"] is sys.modules["lio.alg.lio_agent_er"]
     assert exc.value.code == 0 and trainer.run_episode is original
     for name in ("config.json", "provenance.json"):
         record = json.loads((tmp_path / "lio/results/p5/probe" / name).read_text())

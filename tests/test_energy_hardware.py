@@ -180,6 +180,7 @@ def test_recorded_hardware_must_match_both_config_and_provenance(tmp_path):
 def test_launcher_hardware_provenance_default(monkeypatch, tmp_path, profile):
     from test_energy_profiles import test_launcher_dispatch_and_provenance
     test_launcher_dispatch_and_provenance(monkeypatch, tmp_path, "refine_er", profile)
+    assert sys.modules["lio_agent_er"] is sys.modules["lio.alg.lio_agent_er"]
     record = json.loads((tmp_path / "lio/results/p1/probe/provenance.json").read_text())
     if profile == "legacy": assert "hardware_profile_lambda" not in record
     else: assert record["hardware_profile_lambda"] == [1.0, 1.0]
@@ -206,6 +207,8 @@ def test_heterogeneous_launcher_records_vector_and_scales(monkeypatch, tmp_path)
     modules = {"lio.alg.config_room_REFiNE": SimpleNamespace(get_config=lambda: cfg),
                "lio.alg.train_REFiNE_er": SimpleNamespace(train=train),
                "lio.alg.REFiNE_er": SimpleNamespace(REFiNE=Agent)}
+    from test_energy_profiles import register_agent_module_doubles
+    register_agent_module_doubles(monkeypatch, modules)
     original = runtime.importlib.import_module
     monkeypatch.setattr(runtime.importlib, "import_module", lambda name: modules[name] if name in modules else original(name))
     graph = SimpleNamespace(seed=None)
@@ -222,6 +225,7 @@ def test_heterogeneous_launcher_records_vector_and_scales(monkeypatch, tmp_path)
                                      "--seed", "1", "--n_agents", "4", "--cost_profile", "paper_ratio_v1",
                                      "--hardware_profile", "hetero_2x1p5_v1"])
     with pytest.raises(SystemExit) as exc: run_single.main()
+    assert sys.modules["lio_agent_er"] is sys.modules["lio.alg.lio_agent_er"]
     assert exc.value.code == 0
     record = json.loads((tmp_path / "lio/results/p4/probe/provenance.json").read_text())
     assert record["hardware_profile_lambda"] == captured[0].hardware_profile_lambda == [1, 1, 1.5, 1.5]

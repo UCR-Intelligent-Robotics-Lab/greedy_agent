@@ -25,6 +25,27 @@ from sensys_runs import energy_profile_runtime as runtime
 from sensys_runs import run_single
 
 
+def register_agent_module_doubles(monkeypatch, modules):
+    """Scope canonical packages and bare aliases to the launcher test."""
+    from types import ModuleType
+    import lio
+
+    package = ModuleType("lio.alg")
+    package.__path__ = []
+    monkeypatch.setitem(sys.modules, "lio.alg", package)
+    monkeypatch.setattr(lio, "alg", package, raising=False)
+    for name in ("lio_agent_er", "REFiNE_er"):
+        canonical = "lio.alg." + name
+        module = ModuleType(canonical)
+        if canonical in modules:
+            module.__dict__.update(vars(modules[canonical]))
+        modules[canonical] = module
+        monkeypatch.setitem(sys.modules, canonical, module)
+        monkeypatch.setattr(package, name, module, raising=False)
+        # A distinct sentinel verifies dispatch replaces the bare import alias.
+        monkeypatch.setitem(sys.modules, name, ModuleType(name))
+
+
 @pytest.mark.parametrize("profile,expected", [
     ("uniform_v1", (1, 1, 1)),
     ("low_contrast_v1", (138/121, 225/242, 225/242)),
@@ -240,6 +261,7 @@ def test_launcher_dispatch_and_provenance(monkeypatch, tmp_path, method, profile
         f"lio.alg.{train_name}": SimpleNamespace(train=train),
         runtime.AGENT_CLASSES[method][0]: SimpleNamespace(REFiNE=cls, LIO=cls),
     }
+    register_agent_module_doubles(monkeypatch, modules)
     real_import = importlib.import_module
     monkeypatch.setattr(runtime.importlib, "import_module",
                         lambda name: modules[name] if name in modules else real_import(name))
@@ -276,6 +298,7 @@ def test_launcher_dispatch_and_provenance(monkeypatch, tmp_path, method, profile
                         "--cost_profile", profile])
     with pytest.raises(SystemExit) as result:
         run_single.main()
+    assert sys.modules["lio_agent_er"] is sys.modules["lio.alg.lio_agent_er"]
     assert result.value.code == 0 and len(captured) == 1
     assert cls.calculate_energy_cost is original
     provenance_path = tmp_path / "lio/results/p1/probe/provenance.json"
