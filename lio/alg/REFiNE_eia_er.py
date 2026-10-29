@@ -31,6 +31,8 @@ class REFiNEExploitative(object):
         self.list_other_id = list(range(0, self.n_agents))
         del self.list_other_id[self.agent_id]
         self.beta = config.energy_weight
+        self.eia_w_lever = config.eia_w_lever if "eia_w_lever" in config else 2.0
+        self.eia_w_door = config.eia_w_door if "eia_w_door" in config else 0.2
         self.fairness_amplifier = config.Fairness_multiplier
         # Default is allow the agent to give rewards
         self.can_give = True
@@ -53,6 +55,10 @@ class REFiNEExploitative(object):
 
         self.create_networks()
         self.policy_new = PolicyNew
+        if (self.eia_w_lever, self.eia_w_door) != (2.0, 0.2):
+            print(f"Initializing REFiNE exploitative agent {self.agent_name} with effective weights "
+                  f"(lever={self.eia_w_lever}, door={self.eia_w_door})")
+            return
         print(f"Initializing REFiNE exploitative agent {self.agent_name} with weight pair (2.0, 0.2)")
 
 
@@ -231,6 +237,17 @@ class REFiNEExploitative(object):
         # - High rewards for others doing work (lever pulling)
         # - Low rewards for door actions
         # - Ignore own position
+        # Preserve the original default arithmetic path byte for byte.
+        configured_weights = (getattr(self, "eia_w_lever", 2.0),
+                              getattr(self, "eia_w_door", 0.2))
+        if configured_weights != (2.0, 0.2):
+            for i, action in enumerate(action_all):
+                if i != self.agent_id:
+                    if action == 0:
+                        reward[i] = configured_weights[0] * reward[i]
+                    elif action == 2:
+                        reward[i] = configured_weights[1] * reward[i]
+            return reward.flatten() * self.r_multiplier
         for i, action in enumerate(action_all):
             if i != self.agent_id:
                 if action == 0:  # Lever pulling

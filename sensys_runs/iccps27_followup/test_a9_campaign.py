@@ -163,6 +163,9 @@ def static_isolation_report(root: Path = ROOT) -> dict:
     changed = [p for p in git("diff", "HEAD", "--name-only", "-z") if p]
     tracked = [p for p in git("ls-files", "-z") if p]
     outside_changes = [p for p in changed if not p.startswith(FOLLOWUP)]
+    # Step 2 permits C03 only when its source is unreachable by clean training.
+    from sensys_runs.iccps27_followup.scope_check import permitted_c03_exception
+    outside_changes = permitted_c03_exception(root, outside_changes)
     imports = []
     for relative in tracked:
         path = root / relative
